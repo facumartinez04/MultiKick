@@ -52,9 +52,17 @@ export const initiateLogin = async () => {
     // Save verifier for later
     localStorage.setItem('kick_code_verifier', codeVerifier);
 
-    const scope = 'chat:write user:read'; // Adjust scopes as needed
-    const authUrl = `https://id.kick.com/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}&code_challenge=${codeChallenge}&code_challenge_method=S256`;
+    const scope = 'user:read chat:write';
+    const state = generateRandomString(32); // CSRF Protection
+    localStorage.setItem('kick_auth_state', state);
 
+    // Clean inputs to avoid whitespace errors
+    const cleanClientId = clientId.trim();
+    const cleanRedirectUri = redirectUri.trim();
+
+    const authUrl = `https://id.kick.com/oauth/authorize?response_type=code&client_id=${cleanClientId}&redirect_uri=${encodeURIComponent(cleanRedirectUri)}&scope=${encodeURIComponent(scope)}&code_challenge=${codeChallenge}&code_challenge_method=S256&state=${state}`;
+
+    console.log("Redirecting to Kick Auth:", authUrl);
     window.location.href = authUrl;
 };
 

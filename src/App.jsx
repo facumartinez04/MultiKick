@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, MonitorPlay, MessageSquare, ArrowLeft, X, Play, VolumeX } from 'lucide-react';
+import { Plus, MonitorPlay, MessageSquare, ArrowLeft, X, Play, VolumeX, LogOut } from 'lucide-react';
 import KickPlayer from './components/KickPlayer';
 import { initiateLogin, handleCallback } from './utils/kickAuth';
 
@@ -49,7 +49,25 @@ function App() {
           if (data.access_token) {
             localStorage.setItem('kick_access_token', data.access_token);
             setUserToken(data.access_token);
-            alert("Logged in successfully! You can now use the API chat.");
+
+            // Restore State if exists
+            const savedState = localStorage.getItem('kick_pre_login_state');
+            if (savedState) {
+              try {
+                const parsed = JSON.parse(savedState);
+                if (parsed.channels && parsed.channels.length > 0) {
+                  setChannels(parsed.channels);
+                  if (parsed.activeChat) setActiveChat(parsed.activeChat);
+                  if (parsed.isStreamActive) setIsStreamActive(parsed.isStreamActive);
+                  updateUrl(parsed.channels); // Restore URL visual
+                }
+              } catch (e) {
+                console.error("Failed to restore state", e);
+              }
+              localStorage.removeItem('kick_pre_login_state');
+            }
+
+            alert("Logged in successfully!");
           }
         })
         .catch(err => {
@@ -59,9 +77,33 @@ function App() {
     }
   }, [userToken]);
 
+  const handleLoginClick = () => {
+    // Save current state before redirects
+    const appState = {
+      channels,
+      activeChat,
+      isStreamActive
+    };
+    localStorage.setItem('kick_pre_login_state', JSON.stringify(appState));
+    window.location.href = authUrl;
+  };
+
+  const handleReset = () => {
+    // Clear Auth
+    localStorage.removeItem('kick_access_token');
+    localStorage.removeItem('kick_pre_login_state');
+    setUserToken(null);
+
+    // Clear App State
+    setChannels([]);
+    setActiveChat('');
+    setIsStreamActive(false);
+    updateUrl([]);
+  };
+
   const updateUrl = (newChannels) => {
     const url = new URL(window.location);
-    // We will favor the query param for updates to avoid navigation issues, 
+    // We will favor the query param for updates to avoid navigation issues,
     // but the app supports reading the path format /c1/c2/c3
     if (newChannels.length > 0) {
       url.searchParams.set('channels', newChannels.join(','));
@@ -71,11 +113,11 @@ function App() {
     // If we want to support the "/a/b/c" URL style on update, we'd do this:
     // window.history.pushState({}, '', '/' + newChannels.join('/'));
     // But for safety with reload/refresh on static hosts, sticking to query params for internal updates is often safer.
-    // However, the user specifically asked for that format. Let's try to support writing it too if possible, 
-    // but mixing path and query can be complex. 
-    // Let's strictly follow the request "dejarme poner los canales asi". 
+    // However, the user specifically asked for that format. Let's try to support writing it too if possible,
+    // but mixing path and query can be complex.
+    // Let's strictly follow the request "dejarme poner los canales asi".
     // I will stick to query params for *saving* state to avoid breaking relative asset paths,
-    // unless the user insists on the URL bar updating to slashes. 
+    // unless the user insists on the URL bar updating to slashes.
     // The request says "leave me put channels like that AND it opens". This implies reading.
     window.history.pushState({}, '', url);
   };
@@ -279,6 +321,15 @@ function App() {
 
           <div className="flex items-center gap-2">
             <button
+              onClick={handleReset}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold bg-white/5 text-red-400 hover:bg-red-500/20 hover:text-red-300 border border-transparent transition-all mr-2"
+              title="Cerrar canales y Salir"
+            >
+              <LogOut size={16} />
+              <span className="hidden sm:inline">Salir</span>
+            </button>
+
+            <button
               onClick={triggerMuteAll}
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold bg-white/5 text-gray-200 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/50 border border-transparent transition-all"
             >
@@ -340,25 +391,19 @@ function App() {
 
         {/* Chat Embed */}
         <div className="flex-1 bg-black flex flex-col min-h-0">
-          <div className="bg-yellow-500/10 border-b border-yellow-500/20 p-4 text-center text-xs text-yellow-200 shrink-0">
-            {userToken ? (
-              <div className="text-green-400 font-bold mb-2">
-                ✅ Conectado con API
-              </div>
-            ) : (
-              <>
-                <p className="font-bold text-sm mb-1">⚠ ¿No apareces logueado?</p>
-                <p className="mb-2 opacity-80">Conecta tu cuenta para habilitar el chat.</p>
-                <button
-                  onClick={initiateLogin}
-                  className="block w-full bg-kick-green hover:bg-kick-green/90 text-black py-2 rounded font-bold transition-colors mb-2"
-                >
-                  🔐 Conectar mi cuenta
-                </button>
-                <p className="text-[10px] opacity-60 mb-2">Esto habilitará el envío de mensajes desde aquí.</p>
-              </>
-            )}
-          </div>
+          {!userToken && (
+            <div className="bg-yellow-500/10 border-b border-yellow-500/20 p-4 text-center text-xs text-yellow-200 shrink-0">
+              <p className="font-bold text-sm mb-1">⚠ ¿No apareces logueado?</p>
+              <p className="mb-2 opacity-80">Conecta tu cuenta para habilitar el chat.</p>
+              <button
+                onClick={handleLoginClick}
+                className="block w-full bg-kick-green hover:bg-kick-green/90 text-black py-2 rounded font-bold transition-colors mb-2"
+              >
+                🔐 Conectar mi cuenta
+              </button>
+              <p className="text-[10px] opacity-60 mb-2">Esto habilitará el envío de mensajes desde aquí.</p>
+            </div>
+          )}
 
           <div className="relative flex-1 min-h-0">
             {activeChat ? (
