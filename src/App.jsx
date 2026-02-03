@@ -1,4 +1,3 @@
-```javascript
 import React, { useState, useEffect } from 'react';
 import { Plus, MonitorPlay, MessageSquare, ArrowLeft, X, Play, VolumeX } from 'lucide-react';
 import KickPlayer from './components/KickPlayer';
@@ -112,7 +111,7 @@ function App() {
   };
 
   const triggerMuteAll = () => {
-      setShouldMuteAll(Date.now());
+    setShouldMuteAll(Date.now());
   };
 
   const getGridClass = () => {
@@ -212,8 +211,8 @@ function App() {
           >
             <div className="absolute inset-0 bg-kick-green translate-y-[100%] group-hover:translate-y-0 transition-transform duration-300 origin-bottom z-0"></div>
             <div className="relative z-10 flex items-center gap-3">
-                <span>ARMAR MULTI STREAM</span>
-                <Play size={24} fill="currentColor" />
+              <span>ARMAR MULTI STREAM</span>
+              <Play size={24} fill="currentColor" />
             </div>
           </button>
 
@@ -254,20 +253,19 @@ function App() {
 
           <div className="flex items-center gap-2">
             <button
-                onClick={triggerMuteAll}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold bg-white/5 text-gray-200 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/50 border border-transparent transition-all"
+              onClick={triggerMuteAll}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold bg-white/5 text-gray-200 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/50 border border-transparent transition-all"
             >
-                <VolumeX size={16} />
-                <span className="hidden sm:inline">Mutear Todos</span>
+              <VolumeX size={16} />
+              <span className="hidden sm:inline">Mutear Todos</span>
             </button>
 
             <button
               onClick={() => setIsChatOpen(!isChatOpen)}
-              className={`flex items - center gap - 2 px - 3 py - 1.5 rounded - lg text - sm font - bold transition - all ${
-  isChatOpen
-    ? 'bg-kick-green text-black'
-    : 'bg-white/5 text-gray-400 hover:bg-white/10'
-} `}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${isChatOpen
+                  ? 'bg-kick-green text-black'
+                  : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                }`}
             >
               <MessageSquare size={16} />
               <span className="hidden sm:inline">Chat</span>
@@ -276,7 +274,7 @@ function App() {
         </header>
 
         {/* Grid */}
-        <main className={`flex - 1 relative overflow - hidden bg - black / 50 ${ getGridClass() } `}>
+        <main className={`flex-1 relative overflow-hidden bg-black/50 ${getGridClass()}`}>
           {channels.map((channel) => (
             <div key={channel} className="w-full h-full p-0.5 border-2 border-transparent hover:border-white/5 transition-all">
               <KickPlayer channel={channel} onRemove={removeChannel} shouldMuteAll={shouldMuteAll} />
@@ -287,9 +285,8 @@ function App() {
 
       {/* Right Sidebar (Chat) */}
       <div
-        className={`flex - shrink - 0 bg - kick - gray border - l border - white / 5 transition - all duration - 300 flex flex - col ${
-  isChatOpen ? 'w-80 md:w-96 translate-x-0' : 'w-0 translate-x-full opacity-0'
-} `}
+        className={`flex-shrink-0 bg-kick-gray border-l border-white/5 transition-all duration-300 flex flex-col ${isChatOpen ? 'w-80 md:w-96 translate-x-0' : 'w-0 translate-x-full opacity-0'
+          }`}
       >
         {/* Chat Header / Dropdown */}
         <div className="h-14 border-b border-white/5 flex items-center p-3 shrink-0 gap-2">
@@ -338,20 +335,20 @@ function App() {
           <div className="relative flex-1 min-h-0">
             {activeChat ? (
               <iframe
-                title={`${ activeChat } chat`}
+                title={`${activeChat} chat`}
                 src={`https://kick.com/popout/${activeChat}/chat`}
-className = "absolute inset-0 w-full h-full border-none"
-  />
+                className="absolute inset-0 w-full h-full border-none"
+              />
             ) : (
-  <div className="flex items-center justify-center h-full text-gray-500 text-sm">
-    No chat selected
-  </div>
-)}
-          </div >
-        </div >
+              <div className="flex items-center justify-center h-full text-gray-500 text-sm">
+                No chat selected
+              </div>
+            )}
+          </div>
+        </div>
 
-      </div >
-    </div >
+      </div>
+    </div>
   );
 }
 
