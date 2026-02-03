@@ -32,7 +32,7 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                     frameBorder="0"
                     scrolling="no"
                     allowFullScreen={true}
-                    allow="autoplay; fullscreen"
+                    allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
                     className="w-full h-full bg-black"
                 ></iframe>
 

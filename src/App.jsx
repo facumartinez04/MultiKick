@@ -86,7 +86,7 @@ function App() {
       isStreamActive
     };
     localStorage.setItem('kick_pre_login_state', JSON.stringify(appState));
-    window.location.href = authUrl;
+    initiateLogin();
   };
 
   const handleReset = () => {
