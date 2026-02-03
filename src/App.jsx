@@ -263,8 +263,8 @@ function App() {
             <button
               onClick={() => setIsChatOpen(!isChatOpen)}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${isChatOpen
-                  ? 'bg-kick-green text-black'
-                  : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                ? 'bg-kick-green text-black'
+                : 'bg-white/5 text-gray-400 hover:bg-white/10'
                 }`}
             >
               <MessageSquare size={16} />
@@ -315,21 +315,27 @@ function App() {
         {/* Chat Embed */}
         <div className="flex-1 bg-black flex flex-col min-h-0">
           <div className="bg-yellow-500/10 border-b border-yellow-500/20 p-4 text-center text-xs text-yellow-200 shrink-0">
-            <p className="font-bold text-sm mb-1">⚠ ¿Error de Login / CSRF?</p>
-            <p className="mb-3 opacity-80">Por seguridad, el navegador bloquea el login en ventanas pequeñas.</p>
-            <ol className="text-left list-decimal pl-8 mb-3 space-y-1 opacity-80">
-              <li>Haz click en el botón de abajo.</li>
-              <li>Logueate en la pestaña nueva de Kick.</li>
-              <li>Vuelve aquí y recarga la página (F5).</li>
-            </ol>
-            <a
-              href="https://kick.com"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-block bg-yellow-500 hover:bg-yellow-400 text-black px-4 py-2 rounded font-bold uppercase tracking-wide transition-colors shadow-lg"
-            >
-              IR A KICK.COM PARA LOGUEAR
-            </a>
+            <p className="font-bold text-sm mb-1">⚠ ¿No apareces logueado?</p>
+            <p className="mb-2 opacity-80">Los navegadores bloquean la sesión en iframes externos por seguridad (Cookies).</p>
+            <p className="mb-3 opacity-80">Prueba permitir cookies de terceros o usa el botón de abajo:</p>
+
+            <div className="flex flex-col gap-2">
+              <a
+                href="https://kick.com"
+                target="_blank"
+                rel="noreferrer"
+                className="block w-full bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-200 border border-yellow-500/50 py-2 rounded font-semibold transition-colors"
+              >
+                1. Ir a Kick.com y Loguear
+              </a>
+              <button
+                onClick={() => window.open(`https://kick.com/popout/${activeChat}/chat`, 'KickChat', 'width=400,height=600')}
+                className="block w-full bg-kick-green hover:bg-kick-green/90 text-black py-2 rounded font-bold transition-colors"
+              >
+                2. Abrir Chat en Ventana Externa
+              </button>
+            </div>
+            <p className="mt-2 text-[10px] opacity-60">Opción 2 siempre funciona para enviar mensajes.</p>
           </div>
 
           <div className="relative flex-1 min-h-0">
