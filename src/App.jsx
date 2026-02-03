@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, MonitorPlay, MessageSquare, ArrowLeft, X, Play, VolumeX } from 'lucide-react';
 import KickPlayer from './components/KickPlayer';
+import { initiateLogin, handleCallback } from './utils/kickAuth';
 
 function App() {
   const [channels, setChannels] = useState([]);
@@ -9,6 +10,8 @@ function App() {
   const [activeChat, setActiveChat] = useState('');
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [shouldMuteAll, setShouldMuteAll] = useState(0);
+  const [userToken, setUserToken] = useState(localStorage.getItem('kick_access_token'));
+  const [authError, setAuthError] = useState(null);
 
   // Load from URL (Path or Query) on mount
   useEffect(() => {
@@ -32,6 +35,29 @@ function App() {
       setIsStreamActive(true);
     }
   }, []);
+
+  // Handle OAuth Callback
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    if (code && !userToken) {
+      // Clear URL clean
+      window.history.replaceState({}, document.title, window.location.pathname);
+
+      handleCallback(code)
+        .then(data => {
+          if (data.access_token) {
+            localStorage.setItem('kick_access_token', data.access_token);
+            setUserToken(data.access_token);
+            alert("Logged in successfully! You can now use the API chat.");
+          }
+        })
+        .catch(err => {
+          console.error("Auth Error", err);
+          setAuthError("Login failed: " + err.message);
+        });
+    }
+  }, [userToken]);
 
   const updateUrl = (newChannels) => {
     const url = new URL(window.location);
@@ -315,27 +341,33 @@ function App() {
         {/* Chat Embed */}
         <div className="flex-1 bg-black flex flex-col min-h-0">
           <div className="bg-yellow-500/10 border-b border-yellow-500/20 p-4 text-center text-xs text-yellow-200 shrink-0">
-            <p className="font-bold text-sm mb-1">⚠ ¿No apareces logueado?</p>
-            <p className="mb-2 opacity-80">Los navegadores bloquean la sesión en iframes externos por seguridad (Cookies).</p>
-            <p className="mb-3 opacity-80">Prueba permitir cookies de terceros o usa el botón de abajo:</p>
+            {userToken ? (
+              <div className="text-green-400 font-bold mb-2">
+                ✅ Conectado con API
+              </div>
+            ) : (
+              <>
+                <p className="font-bold text-sm mb-1">⚠ ¿No apareces logueado?</p>
+                <p className="mb-2 opacity-80">Los navegadores bloquean la sesión en iframes.</p>
+                <button
+                  onClick={initiateLogin}
+                  className="block w-full bg-kick-green hover:bg-kick-green/90 text-black py-2 rounded font-bold transition-colors mb-2"
+                >
+                  🔐 Conectar tu Cuenta (API)
+                </button>
+                <p className="text-[10px] opacity-60 mb-2">Esto habilitará el envío de mensajes desde aquí.</p>
+              </>
+            )}
 
+            <p className="mb-1 opacity-80 border-t border-white/10 pt-2">Alternativa:</p>
             <div className="flex flex-col gap-2">
-              <a
-                href="https://kick.com"
-                target="_blank"
-                rel="noreferrer"
-                className="block w-full bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-200 border border-yellow-500/50 py-2 rounded font-semibold transition-colors"
-              >
-                1. Ir a Kick.com y Loguear
-              </a>
               <button
                 onClick={() => window.open(`https://kick.com/popout/${activeChat}/chat`, 'KickChat', 'width=400,height=600')}
-                className="block w-full bg-kick-green hover:bg-kick-green/90 text-black py-2 rounded font-bold transition-colors"
+                className="block w-full bg-white/10 hover:bg-white/20 text-white py-1.5 rounded font-semibold transition-colors"
               >
-                2. Abrir Chat en Ventana Externa
+                Abrir Chat en Popout
               </button>
             </div>
-            <p className="mt-2 text-[10px] opacity-60">Opción 2 siempre funciona para enviar mensajes.</p>
           </div>
 
           <div className="relative flex-1 min-h-0">
