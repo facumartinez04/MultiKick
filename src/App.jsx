@@ -348,26 +348,16 @@ function App() {
             ) : (
               <>
                 <p className="font-bold text-sm mb-1">⚠ ¿No apareces logueado?</p>
-                <p className="mb-2 opacity-80">Los navegadores bloquean la sesión en iframes.</p>
+                <p className="mb-2 opacity-80">Conecta tu cuenta para habilitar el chat.</p>
                 <button
                   onClick={initiateLogin}
                   className="block w-full bg-kick-green hover:bg-kick-green/90 text-black py-2 rounded font-bold transition-colors mb-2"
                 >
-                  🔐 Conectar tu Cuenta (API)
+                  🔐 Conectar mi cuenta
                 </button>
                 <p className="text-[10px] opacity-60 mb-2">Esto habilitará el envío de mensajes desde aquí.</p>
               </>
             )}
-
-            <p className="mb-1 opacity-80 border-t border-white/10 pt-2">Alternativa:</p>
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={() => window.open(`https://kick.com/popout/${activeChat}/chat`, 'KickChat', 'width=400,height=600')}
-                className="block w-full bg-white/10 hover:bg-white/20 text-white py-1.5 rounded font-semibold transition-colors"
-              >
-                Abrir Chat en Popout
-              </button>
-            </div>
           </div>
 
           <div className="relative flex-1 min-h-0">
