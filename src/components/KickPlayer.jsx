@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, RefreshCw, Volume2, VolumeX } from 'lucide-react';
+import { X, RefreshCw, Volume2, VolumeX, Maximize2, Minimize2 } from 'lucide-react';
 
-const KickPlayer = ({ channel, onRemove, shouldMuteAll }) => {
+const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMaximize }) => {
     const [key, setKey] = useState(0); // To force reload iframe
     const [isMuted, setIsMuted] = useState(false);
 
@@ -54,6 +54,13 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll }) => {
                         title="Reload stream"
                     >
                         <RefreshCw size={14} />
+                    </button>
+                    <button
+                        onClick={onToggleMaximize}
+                        className="p-2 bg-black/60 hover:bg-kick-green hover:text-black text-white rounded-lg backdrop-blur-md transition-all border border-white/10 hover:border-kick-green shadow-lg"
+                        title={isMaximized ? "Minimize" : "Maximize"}
+                    >
+                        {isMaximized ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
                     </button>
                     <button
                         onClick={() => onRemove(channel)}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, MonitorPlay, MessageSquare, ArrowLeft, X, Play, VolumeX, LogOut } from 'lucide-react';
+import { Plus, MonitorPlay, MessageSquare, ArrowLeft, X, Play, VolumeX, LogOut, Maximize2, Minimize2 } from 'lucide-react';
 import KickPlayer from './components/KickPlayer';
 import { initiateLogin, handleCallback } from './utils/kickAuth';
 
@@ -12,6 +12,7 @@ function App() {
   const [shouldMuteAll, setShouldMuteAll] = useState(0);
   const [userToken, setUserToken] = useState(localStorage.getItem('kick_access_token'));
   const [authError, setAuthError] = useState(null);
+  const [maximizedChannel, setMaximizedChannel] = useState(null);
 
   // Load from URL (Path or Query) on mount
   useEffect(() => {
@@ -98,6 +99,7 @@ function App() {
     setChannels([]);
     setActiveChat('');
     setIsStreamActive(false);
+    setMaximizedChannel(null);
     updateUrl([]);
   };
 
@@ -183,6 +185,7 @@ function App() {
   };
 
   const getGridClass = () => {
+    if (maximizedChannel) return 'grid grid-cols-1'; // Full screen override
     const count = channels.length;
     switch (count) {
       case 0: return 'flex items-center justify-center';
@@ -351,12 +354,24 @@ function App() {
         </header>
 
         {/* Grid */}
+        {/* Grid */}
         <main className={`flex-1 relative overflow-hidden bg-black/50 ${getGridClass()}`}>
-          {channels.map((channel) => (
-            <div key={channel} className="w-full h-full p-0.5 border-2 border-transparent hover:border-white/5 transition-all">
-              <KickPlayer channel={channel} onRemove={removeChannel} shouldMuteAll={shouldMuteAll} />
-            </div>
-          ))}
+          {channels.map((channel) => {
+            // If focused, hide others
+            if (maximizedChannel && maximizedChannel !== channel) return null;
+
+            return (
+              <div key={channel} className="w-full h-full p-0.5 border-2 border-transparent hover:border-white/5 transition-all">
+                <KickPlayer
+                  channel={channel}
+                  onRemove={removeChannel}
+                  shouldMuteAll={shouldMuteAll}
+                  isMaximized={maximizedChannel === channel}
+                  onToggleMaximize={() => setMaximizedChannel(maximizedChannel === channel ? null : channel)}
+                />
+              </div>
+            );
+          })}
         </main>
       </div>
 
