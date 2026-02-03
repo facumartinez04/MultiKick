@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, MonitorPlay, MessageSquare, ArrowLeft, X, Play, VolumeX, LogOut, Maximize2, Minimize2 } from 'lucide-react';
 import KickPlayer from './components/KickPlayer';
+import ChatInput from './components/ChatInput';
 import { initiateLogin, handleCallback } from './utils/kickAuth';
 
 function App() {
@@ -407,16 +408,14 @@ function App() {
         {/* Chat Embed */}
         <div className="flex-1 bg-black flex flex-col min-h-0">
           {!userToken && (
-            <div className="bg-yellow-500/10 border-b border-yellow-500/20 p-4 text-center text-xs text-yellow-200 shrink-0">
-              <p className="font-bold text-sm mb-1">⚠ ¿No apareces logueado?</p>
-              <p className="mb-2 opacity-80">Conecta tu cuenta para habilitar el chat.</p>
+            <div className="bg-yellow-500/10 border-b border-yellow-500/20 p-2 text-center text-[10px] text-yellow-200 shrink-0 flex items-center justify-between px-3">
+              <span>⚠ Modo Lectura</span>
               <button
                 onClick={handleLoginClick}
-                className="block w-full bg-kick-green hover:bg-kick-green/90 text-black py-2 rounded font-bold transition-colors mb-2"
+                className="bg-kick-green text-black px-2 py-1 rounded font-bold hover:bg-kick-green/90 transition-colors"
               >
-                🔐 Conectar mi cuenta
+                Conectar para Escribir
               </button>
-              <p className="text-[10px] opacity-60 mb-2">Esto habilitará el envío de mensajes desde aquí.</p>
             </div>
           )}
 
@@ -432,7 +431,13 @@ function App() {
                 No chat selected
               </div>
             )}
+
+            {/* Overlay to block iframe interactions if not logged in (optional, but good for UX so they don't try to type in the read-only frame) */}
+            <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black via-transparent to-transparent pointer-events-none" />
           </div>
+
+          {/* Custom API Chat Input */}
+          <ChatInput activeChat={activeChat} userToken={userToken} />
         </div>
 
       </div>

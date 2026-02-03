@@ -1,9 +1,38 @@
-import React, { useState, useEffect } from 'react';
-import { X, RefreshCw, Volume2, VolumeX, Maximize2, Minimize2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, RefreshCw, Volume2, VolumeX, Maximize2, Minimize2, Settings } from 'lucide-react';
+import ReactPlayer from 'react-player';
 
 const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMaximize }) => {
-    const [key, setKey] = useState(0); // To force reload iframe
+    const [key, setKey] = useState(0);
     const [isMuted, setIsMuted] = useState(false);
+    const [streamUrl, setStreamUrl] = useState(null);
+    const [useCustomPlayer, setUseCustomPlayer] = useState(true);
+    const playerRef = useRef(null);
+
+    useEffect(() => {
+        let isMounted = true;
+        const fetchStream = async () => {
+            // User requested to hit this specific API
+            try {
+                const response = await fetch(`https://multikick.com/api/kick/${channel}`);
+                if (!response.ok) throw new Error('API Fail');
+                const data = await response.json();
+
+                if (isMounted && data.playback_url) {
+                    setStreamUrl(data.playback_url);
+                } else {
+                    setUseCustomPlayer(false);
+                }
+            } catch (err) {
+                console.error("Stream Fetch Error", err);
+                if (isMounted) setUseCustomPlayer(false);
+            }
+        };
+
+        if (useCustomPlayer) {
+            fetchStream();
+        }
+    }, [channel, useCustomPlayer]);
 
     useEffect(() => {
         if (shouldMuteAll) {
@@ -24,17 +53,36 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
     return (
         <div className="relative w-full h-full bg-black border border-white/5 rounded-xl overflow-hidden flex flex-col group shadow-2xl ring-1 ring-white/5 hover:ring-kick-green/30 transition-all duration-300">
             <div className="flex-grow relative">
-                <iframe
-                    key={key}
-                    src={`https://player.kick.com/${channel}?autoplay=true&muted=${isMuted}`}
-                    height="100%"
-                    width="100%"
-                    frameBorder="0"
-                    scrolling="no"
-                    allowFullScreen={true}
-                    allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-                    className="w-full h-full bg-black"
-                ></iframe>
+                {useCustomPlayer && streamUrl ? (
+                    <ReactPlayer
+                        ref={playerRef}
+                        key={`player-${key}`}
+                        url={streamUrl}
+                        playing={true}
+                        muted={isMuted}
+                        width="100%"
+                        height="100%"
+                        controls={true} // Enable default controls for quality/volume
+                        config={{
+                            file: {
+                                forceHLS: true,
+                            }
+                        }}
+                        onError={() => setUseCustomPlayer(false)} // Fallback to iframe
+                    />
+                ) : (
+                    <iframe
+                        key={key}
+                        src={`https://player.kick.com/${channel}?autoplay=true&muted=${isMuted}`}
+                        height="100%"
+                        width="100%"
+                        frameBorder="0"
+                        scrolling="no"
+                        allowFullScreen={true}
+                        allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+                        className="w-full h-full bg-black"
+                    ></iframe>
+                )}
 
                 {/* Gradient Overlay for controls visibility */}
                 <div className="absolute top-0 inset-x-0 h-16 bg-gradient-to-b from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
@@ -48,6 +96,16 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                     >
                         {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
                     </button>
+                    {/* Only show custom fallback toggle if needed or debug */}
+                    {useCustomPlayer && (
+                        <button
+                            onClick={() => setUseCustomPlayer(false)}
+                            className="p-2 bg-black/60 hover:bg-yellow-500 hover:text-black text-white rounded-lg backdrop-blur-md transition-all border border-white/10 shadow-lg"
+                            title="Force Iframe (Classic)"
+                        >
+                            <Settings size={14} />
+                        </button>
+                    )}
                     <button
                         onClick={reload}
                         className="p-2 bg-black/60 hover:bg-kick-green hover:text-black text-white rounded-lg backdrop-blur-md transition-all border border-white/10 hover:border-kick-green shadow-lg"
