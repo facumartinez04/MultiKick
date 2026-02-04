@@ -3,7 +3,7 @@ import { Plus, MonitorPlay, MessageSquare, ArrowLeft, X, Play, VolumeX, LogOut, 
 import KickPlayer from './components/KickPlayer';
 import KickChat from './components/KickChat';
 import ChatInput from './components/ChatInput';
-import { initiateLogin, handleCallback } from './utils/kickAuth';
+import { initiateLogin, handleCallback, fetchCurrentUser } from './utils/kickAuth';
 
 function App() {
   const [channels, setChannels] = useState([]);
@@ -21,8 +21,9 @@ function App() {
   });
   const [authError, setAuthError] = useState(null);
   const [maximizedChannel, setMaximizedChannel] = useState(null);
+  const [pendingRestore, setPendingRestore] = useState(null); // State for restoration modal
 
-  // Load from URL (Path or Query) on mount
+  // ... useEffects ...
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const queryChannels = params.get('channels')?.split(',') || [];
@@ -45,6 +46,25 @@ function App() {
     }
   }, []);
 
+  // Self-Repair User Data
+  useEffect(() => {
+    if (userToken && !userData) {
+      console.log("Attempting to repair user data...");
+      fetchCurrentUser(userToken)
+        .then(user => {
+          if (user) {
+            console.log("User data repaired:", user.username);
+            setUserData(user);
+            localStorage.setItem('kick_user', JSON.stringify(user));
+          }
+        })
+        .catch(err => {
+          console.error("Failed to repair user data", err);
+          // If 401, maybe logout? For now just log.
+        });
+    }
+  }, [userToken, userData]);
+
   // Handle OAuth Callback
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -64,24 +84,21 @@ function App() {
               setUserData(data.user);
             }
 
-            // Restore State if exists
+            // Check for previous session to restore
             const savedState = localStorage.getItem('kick_pre_login_state');
             if (savedState) {
               try {
                 const parsed = JSON.parse(savedState);
                 if (parsed.channels && parsed.channels.length > 0) {
-                  setChannels(parsed.channels);
-                  if (parsed.activeChat) setActiveChat(parsed.activeChat);
-                  if (parsed.isStreamActive) setIsStreamActive(parsed.isStreamActive);
-                  updateUrl(parsed.channels); // Restore URL visual
+                  setPendingRestore(parsed); // Trigger Modal
                 }
               } catch (e) {
                 console.error("Failed to restore state", e);
               }
               localStorage.removeItem('kick_pre_login_state');
+            } else {
+              // No state? Just show success toast or nothing
             }
-
-            alert(`Logged in as ${data.user?.username || 'User'}!`);
           }
         })
         .catch(err => {
@@ -153,7 +170,7 @@ function App() {
     });
 
     if (addedCount === 0 && currentChannels.length >= 9) {
-      alert("Maximum 9 channels allowed.");
+      alert("Máximo 9 canales permitidos.");
       return;
     }
 
@@ -238,7 +255,7 @@ function App() {
               Multi<span className="text-kick-green">Kick</span>
             </h1>
             <p className="text-gray-400 mt-4 text-center max-w-lg text-lg">
-              Build your ultimate command center. Watch up to 9 streams simultaneously with zero lag.
+              Arma tu centro de comando definitivo. Mira hasta 9 streams a la vez con cero lag.
             </p>
           </div>
 
@@ -252,7 +269,7 @@ function App() {
                 type="text"
                 value={inputChannel}
                 onChange={(e) => setInputChannel(e.target.value)}
-                placeholder="Add Channel (e.g. adinross)"
+                placeholder="Agregar Canal (ej. Coscu)"
                 className="w-full bg-transparent border-none text-white placeholder-gray-500 pl-12 pr-4 py-3 focus:outline-none focus:ring-0 text-lg"
                 autoFocus
               />
@@ -324,7 +341,7 @@ function App() {
             <button
               onClick={() => setIsStreamActive(false)}
               className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
-              title="Back to Setup"
+              title="Volver al inicio"
             >
               <ArrowLeft size={20} />
             </button>
@@ -395,26 +412,50 @@ function App() {
           }`}
       >
         {/* Chat Header / Dropdown */}
-        <div className="h-14 border-b border-white/5 flex items-center p-3 shrink-0 gap-2">
-          <MessageSquare size={18} className="text-kick-green" />
-          <div className="flex-1 relative">
-            <select
-              value={activeChat}
-              onChange={(e) => setActiveChat(e.target.value)}
-              className="w-full bg-black/30 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-kick-green appearance-none cursor-pointer hover:bg-black/50 transition-colors"
+        <div className="h-14 border-b border-white/5 flex items-center px-3 py-2 shrink-0 gap-2 z-50">
+          <div className="relative w-full">
+            <button
+              onClick={() => setIsChatOpen(prev => prev === 'dropdown' ? true : 'dropdown')}
+              className="w-full flex items-center justify-between bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-3 py-2 transition-all group"
             >
-              {channels.map(c => (
-                <option key={c} value={c} className="bg-kick-gray text-white">
-                  {c}'s Chat
-                </option>
-              ))}
-            </select>
-            {/* Custom Arrow */}
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-              <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <div className="flex items-center gap-3 overflow-hidden">
+                {/* Avatar Placeholder / or actual if we had it. Using UI Avatars for consistent "Icono" feel */}
+                <div className="w-6 h-6 rounded-full bg-kick-green flex items-center justify-center shrink-0 text-black text-[10px] font-bold uppercase">
+                  {activeChat ? activeChat.substring(0, 2) : '??'}
+                </div>
+                <span className="font-bold text-sm text-white truncate">
+                  {activeChat ? `chat de ${activeChat}` : 'Selecciona un chat'}
+                </span>
+              </div>
+
+              {/* Arrow */}
+              <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg" className={`text-gray-400 group-hover:text-white transition-transform duration-200 ${isChatOpen === 'dropdown' ? 'rotate-180' : ''}`}>
                 <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-            </div>
+            </button>
+
+            {/* Dropdown Menu */}
+            {isChatOpen === 'dropdown' && (
+              <div className="absolute top-full left-0 w-full mt-2 bg-kick-dark border border-white/10 rounded-lg shadow-2xl overflow-hidden z-50 flex flex-col animate-in fade-in zoom-in-95 duration-150">
+                {channels.map(c => (
+                  <button
+                    key={c}
+                    onClick={() => {
+                      setActiveChat(c);
+                      setIsChatOpen(true); // Close dropdown (return to 'true' state means open sidebar)
+                    }}
+                    className={`flex items-center gap-3 px-3 py-3 text-sm transition-colors hover:bg-white/5 ${activeChat === c ? 'bg-white/10 text-white' : 'text-gray-400'}`}
+                  >
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold uppercase border border-white/10 ${activeChat === c ? 'bg-kick-green text-black' : 'bg-black text-gray-500'}`}>
+                      {c.substring(0, 2)}
+                    </div>
+                    <span className={activeChat === c ? 'font-bold' : ''}>
+                      chat de {c}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -435,6 +476,44 @@ function App() {
         </div>
 
       </div>
+
+      {/* Restore Session Modal */}
+      {pendingRestore && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <div className="bg-kick-dark border border-white/10 p-6 rounded-2xl shadow-2xl max-w-md w-full text-center space-y-4">
+            <div className="w-16 h-16 bg-kick-green/20 text-kick-green rounded-full flex items-center justify-center mx-auto mb-2">
+              <MonitorPlay size={32} />
+            </div>
+            <h2 className="text-2xl font-bold text-white">¡Sesión Recuperada!</h2>
+            <p className="text-gray-400">
+              Encontramos tu sesión anterior con
+              <span className="text-white font-bold mx-1">{pendingRestore.channels.length} stream(s)</span>
+              abiertos.
+            </p>
+
+            <div className="flex flex-col gap-2 mt-4">
+              <button
+                onClick={() => {
+                  setChannels(pendingRestore.channels);
+                  if (pendingRestore.activeChat) setActiveChat(pendingRestore.activeChat);
+                  if (pendingRestore.isStreamActive) setIsStreamActive(pendingRestore.isStreamActive);
+                  updateUrl(pendingRestore.channels);
+                  setPendingRestore(null);
+                }}
+                className="w-full bg-kick-green text-black font-bold py-3 rounded-xl hover:scale-[1.02] transition-transform text-lg"
+              >
+                Volver a ver streams ({pendingRestore.channels.join(', ')})
+              </button>
+              <button
+                onClick={() => setPendingRestore(null)}
+                className="w-full bg-white/5 text-gray-400 font-bold py-3 rounded-xl hover:bg-white/10 hover:text-white transition-colors"
+              >
+                Empezar de cero
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
