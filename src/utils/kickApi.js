@@ -116,6 +116,7 @@ export const getChannelUserRelationship = async (channelSlug, token = null) => {
             'Accept': 'application/json'
         };
 
+        console.log('Fetching relationship with token:', token);
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         }
