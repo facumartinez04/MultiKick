@@ -116,12 +116,44 @@ const KickChat = ({ channel, active }) => {
         };
     }, [chatroomId]);
 
-    // 3. Auto-scroll
+    const containerRef = useRef(null);
+    const [autoScroll, setAutoScroll] = useState(true);
+    const [showScrollButton, setShowScrollButton] = useState(false);
+
+    // ... (existing effects)
+
+    // 3. Auto-scroll Logic
     useEffect(() => {
-        if (bottomRef.current) {
-            bottomRef.current.scrollIntoView({ behavior: "smooth" });
+        if (autoScroll && containerRef.current) {
+            // Use instant scroll for performance/snappiness on high traffic
+            containerRef.current.scrollTop = containerRef.current.scrollHeight;
         }
-    }, [messages]);
+    }, [messages, autoScroll]);
+
+    // Detect manual scroll
+    const handleScroll = () => {
+        if (!containerRef.current) return;
+        const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+
+        // If user scrolls up (distance > 50px from bottom)
+        const distanceToBottom = scrollHeight - scrollTop - clientHeight;
+        const isAtBottom = distanceToBottom < 50;
+
+        if (isAtBottom) {
+            setAutoScroll(true);
+            setShowScrollButton(false);
+        } else {
+            setAutoScroll(false);
+            setShowScrollButton(true);
+        }
+    };
+
+    const scrollToBottom = () => {
+        setAutoScroll(true);
+        if (containerRef.current) {
+            containerRef.current.scrollTop = containerRef.current.scrollHeight;
+        }
+    };
 
     // Render Message Content (text + emotes)
     const renderContent = (content) => {
@@ -167,15 +199,19 @@ const KickChat = ({ channel, active }) => {
     if (!active) return null;
 
     return (
-        <div className="flex-1 bg-black flex flex-col h-full overflow-hidden font-sans text-sm">
+        <div className="flex-1 bg-black flex flex-col h-full overflow-hidden font-sans text-sm relative">
             {/* Status Bar */}
-            <div className="bg-white/5 px-3 py-1 text-[10px] text-gray-500 flex justify-between uppercase tracking-wider">
+            <div className="bg-white/5 px-3 py-1 text-[10px] text-gray-500 flex justify-between uppercase tracking-wider shrink-0">
                 <span>{connectionStatus}</span>
                 <span>{chatroomId ? `RID: ${chatroomId}` : ''}</span>
             </div>
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+            <div
+                ref={containerRef}
+                onScroll={handleScroll}
+                className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar relative"
+            >
                 {messages.length === 0 && connectionStatus === 'Connected' && (
                     <div className="text-center text-gray-500 mt-10 italic opacity-50">
                         Waiting for messages...
@@ -202,8 +238,21 @@ const KickChat = ({ channel, active }) => {
                         </div>
                     );
                 })}
-                <div ref={bottomRef} />
             </div>
+
+            {/* Scroll Paused Alert / Resume Button */}
+            {!autoScroll && (
+                <div className="absolute bottom-4 left-0 right-0 flex justify-center z-10 pointer-events-none">
+                    <button
+                        onClick={scrollToBottom}
+                        className="pointer-events-auto bg-black/80 text-white border border-kick-green/50 px-4 py-2 rounded-full text-xs font-bold shadow-[0_0_15px_rgba(83,252,24,0.3)] hover:bg-kick-green hover:text-black transition-all flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2"
+                    >
+                        <span>Chat Pausado</span>
+                        <span className="w-1 h-3 bg-white/20 mx-1"></span>
+                        <span>Volver al final ⬇</span>
+                    </button>
+                </div>
+            )}
         </div>
     );
 };
