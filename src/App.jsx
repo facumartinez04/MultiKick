@@ -305,7 +305,7 @@ function App() {
   if (!isStreamActive) {
     // INDEX / SETUP VIEW
     return (
-      <div className="min-h-screen w-full bg-kick-dark flex flex-col text-white relative overflow-hidden font-sans">
+      <div className="min-h-[100dvh] w-full bg-kick-dark flex flex-col text-white relative overflow-hidden font-sans">
 
 
         {/* Background Decorative Elements */}
@@ -314,7 +314,7 @@ function App() {
           <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-white/5 rounded-full blur-[120px]"></div>
         </div>
 
-        <div className="flex-1 flex flex-col items-center justify-center z-10 px-6 pb-20 animate-in fade-in zoom-in duration-500">
+        <div className="flex-1 flex flex-col items-center justify-center z-10 px-6 pb-10 animate-in fade-in zoom-in duration-500">
 
           {/* Logo */}
           <div className="mb-12 flex flex-col items-center">
@@ -390,13 +390,10 @@ function App() {
         </div>
 
         {/* Footer */}
-        <div className="py-6 text-gray-600 text-sm flex flex-col items-center gap-1 z-10">
-          <span>Powered by Kick.com</span>
+        <div className="py-6 text-gray-500 text-sm flex flex-col items-center gap-1 z-10 mt-auto">
+          <span>No estamos afiliados directamente con Kick</span>
           <span className="opacity-80">
             Hecho por <a href="https://x.com/_mahada_" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-kick-green font-bold transition-colors">Mahada</a>
-          </span>
-          <span className="text-[10px] opacity-50 mt-1">
-            No estamos afiliados con Kick.com
           </span>
         </div>
       </div>
