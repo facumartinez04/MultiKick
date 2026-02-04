@@ -290,8 +290,9 @@ function App() {
             <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-center">
               Multi<span className="text-kick-green">Kick</span>
             </h1>
+            <h2 className="sr-only">El mejor Multistream para Kick.com</h2>
             <p className="text-gray-400 mt-4 text-center max-w-lg text-lg">
-              Arma tu centro de comando definitivo. Mira hasta 9 streams a la vez con cero lag.
+              Ver varios streams de Kick nunca fue tan fácil. Arma tu centro de comando y mira hasta 9 directos de Kick.com a la vez sin lag.
             </p>
           </div>
 
