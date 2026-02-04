@@ -60,3 +60,13 @@ export const get7TVEmotes = async (kickUserId) => {
         return [];
     }
 };
+export const get7TVGlobalEmotes = async () => {
+    try {
+        const response = await fetch('https://7tv.io/v3/emote-sets/global');
+        if (!response.ok) return [];
+        const data = await response.json();
+        return data?.emotes || [];
+    } catch (e) {
+        return [];
+    }
+};

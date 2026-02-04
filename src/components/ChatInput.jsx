@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Send, Loader2, AlertCircle, LogOut, User, Smile, X } from 'lucide-react';
-import { getChannelInfo, sendChatMessage, getKickEmotes, get7TVEmotes } from '../utils/kickApi';
+import { getChannelInfo, sendChatMessage, getKickEmotes, get7TVEmotes, get7TVGlobalEmotes } from '../utils/kickApi';
 import { initiateLogin } from '../utils/kickAuth';
 
 const EMOJI_LIST = [
@@ -22,6 +22,7 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin }) => {
     // Emotes State
     const [kickEmotes, setKickEmotes] = useState([]);
     const [seventvEmotes, setSeventvEmotes] = useState([]);
+    const [seventvGlobalEmotes, setSeventvGlobalEmotes] = useState([]);
 
     // 1. Fetch Broadcaster & Emotes
     useEffect(() => {
@@ -57,10 +58,13 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin }) => {
         return () => { isMounted = false; };
     }, [activeChat]);
 
-    // 2. Fetch Global Kick Emotes once
+    // 2. Fetch Global Emotes once
     useEffect(() => {
         getKickEmotes().then(data => {
             if (data && Array.isArray(data)) setKickEmotes(data);
+        });
+        get7TVGlobalEmotes().then(data => {
+            if (data && Array.isArray(data)) setSeventvGlobalEmotes(data);
         });
     }, []);
 
@@ -168,21 +172,54 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin }) => {
                         )}
 
                         {activeTab === '7tv' && (
-                            <div className="grid grid-cols-5 gap-2">
-                                {seventvEmotes.length > 0 ? seventvEmotes.map((emote, idx) => (
-                                    <button
-                                        key={idx}
-                                        onClick={() => insertText(emote.name)}
-                                        className="hover:bg-white/10 p-1.5 rounded-lg flex items-center justify-center transition-transform hover:scale-110"
-                                        title={emote.name}
-                                    >
-                                        <img
-                                            src={emote.data.host.url + '/2x.webp'}
-                                            alt={emote.name}
-                                            className="w-8 h-8 object-contain"
-                                        />
-                                    </button>
-                                )) : <p className="text-[10px] text-gray-500 text-center py-4 col-span-full">No se encontraron emotes de 7TV para este canal.</p>}
+                            <div className="flex flex-col gap-4">
+                                {seventvEmotes.length > 0 && (
+                                    <div>
+                                        <p className="text-[9px] font-black text-gray-500 uppercase tracking-tighter mb-2 ml-1">Canal</p>
+                                        <div className="grid grid-cols-5 gap-2">
+                                            {seventvEmotes.map((emote, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    onClick={() => insertText(emote.name)}
+                                                    className="hover:bg-white/10 p-1.5 rounded-lg flex items-center justify-center transition-transform hover:scale-110"
+                                                    title={emote.name}
+                                                >
+                                                    <img
+                                                        src={emote.data.host.url + '/2x.webp'}
+                                                        alt={emote.name}
+                                                        className="w-8 h-8 object-contain"
+                                                    />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {seventvGlobalEmotes.length > 0 && (
+                                    <div>
+                                        <p className="text-[9px] font-black text-gray-500 uppercase tracking-tighter mb-2 ml-1 border-t border-white/5 pt-3">7TV Global</p>
+                                        <div className="grid grid-cols-5 gap-2">
+                                            {seventvGlobalEmotes.map((emote, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    onClick={() => insertText(emote.name)}
+                                                    className="hover:bg-white/10 p-1.5 rounded-lg flex items-center justify-center transition-transform hover:scale-110"
+                                                    title={emote.name}
+                                                >
+                                                    <img
+                                                        src={emote.data.host.url + '/2x.webp'}
+                                                        alt={emote.name}
+                                                        className="w-8 h-8 object-contain"
+                                                    />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {seventvEmotes.length === 0 && seventvGlobalEmotes.length === 0 && (
+                                    <p className="text-[10px] text-gray-500 text-center py-4">Cargando emotes de 7TV...</p>
+                                )}
                             </div>
                         )}
                     </div>
