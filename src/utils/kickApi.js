@@ -37,3 +37,26 @@ export const sendChatMessage = async (token, broadcasterUserId, content) => {
         throw error;
     }
 };
+
+export const getKickEmotes = async () => {
+    try {
+        const response = await fetch('https://kick.com/api/v2/emotes/global');
+        if (!response.ok) return [];
+        return await response.json();
+    } catch (e) {
+        return [];
+    }
+};
+
+export const get7TVEmotes = async (kickUserId) => {
+    try {
+        // 7TV uses Kick User ID for its v3 API
+        const response = await fetch(`https://7tv.io/v3/users/KICK/${kickUserId}`);
+        if (!response.ok) return [];
+        const data = await response.json();
+        // Extract emote set
+        return data?.emote_set?.emotes || [];
+    } catch (e) {
+        return [];
+    }
+};

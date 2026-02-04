@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Send, Loader2, AlertCircle, LogOut, User } from 'lucide-react';
-import { getChannelInfo, sendChatMessage } from '../utils/kickApi';
+import { Send, Loader2, AlertCircle, LogOut, User, Smile, X } from 'lucide-react';
+import { getChannelInfo, sendChatMessage, getKickEmotes, get7TVEmotes } from '../utils/kickApi';
 import { initiateLogin } from '../utils/kickAuth';
+
+const EMOJI_LIST = [
+    '😀', '😃', '😄', '😁', '😅', '😂', '🤣', '😊', '😍', '🥰', '😘', '😋', '😛', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖',
+    '👋', '🤚', '🖐️', '✋', '🖖', '👌', '🤏', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆', '🖕', '👇', '☝️', '👍', '👎', '✊', '👊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏', '✍️', '💅', '🤳', '💪', '🦵', '👂', '👃', '🧠', '🦷', '👀', '👅', '👄',
+    '💋', '💘', '💝', '💖', '💗', '💓', '💞', '💕', '💌', '❣️', '💔', '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💯', '💢', '💥', '💫', '💦', '💨', '💣', '💬', '💭', '💤',
+    '🔥', '✨', '🌟', '🌈', '⚡', '☄️', '💧', '🌊', '👑', '💎', '🎨', '🎬', '🎤', '🎧', '🎮', '🕹️', '🚀', '🛸', '🛰️', '💡', '💰', '💸', '🎁', '🎈', '🎉', '🎊', '🎀', '🪄'
+];
 
 const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin }) => {
     const [message, setMessage] = useState('');
@@ -9,32 +16,53 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin }) => {
     const [broadcasterId, setBroadcasterId] = useState(null);
     const [error, setError] = useState(null);
     const [isIdLoading, setIsIdLoading] = useState(false);
+    const [showEmojis, setShowEmojis] = useState(false);
+    const [activeTab, setActiveTab] = useState('emojis'); // emojis, kick, 7tv
 
-    // Fetch Broadcaster ID when active chat changes
+    // Emotes State
+    const [kickEmotes, setKickEmotes] = useState([]);
+    const [seventvEmotes, setSeventvEmotes] = useState([]);
+
+    // 1. Fetch Broadcaster & Emotes
     useEffect(() => {
         let isMounted = true;
-        const fetchId = async () => {
+        const fetchData = async () => {
             if (!activeChat) return;
             setIsIdLoading(true);
             setError(null);
             setBroadcasterId(null);
+            setSeventvEmotes([]);
 
-            const info = await getChannelInfo(activeChat);
-            if (isMounted) {
-                // Update to handle new API structure which returns user_id
-                const id = info?.user_id || info?.userId;
-                if (id) {
-                    setBroadcasterId(id);
-                } else {
-                    setError('Error obteniendo ID del canal');
+            try {
+                const info = await getChannelInfo(activeChat);
+                if (isMounted && info) {
+                    const id = info.user_id || info.userId || info.id;
+                    if (id) {
+                        setBroadcasterId(id);
+                        // Fetch 7TV for this user
+                        const tvEmotes = await get7TVEmotes(id);
+                        if (isMounted) setSeventvEmotes(tvEmotes);
+                    } else {
+                        setError('Error ID');
+                    }
                 }
-                setIsIdLoading(false);
+            } catch (e) {
+                console.error(e);
+            } finally {
+                if (isMounted) setIsIdLoading(false);
             }
         };
 
-        fetchId();
+        fetchData();
         return () => { isMounted = false; };
     }, [activeChat]);
+
+    // 2. Fetch Global Kick Emotes once
+    useEffect(() => {
+        getKickEmotes().then(data => {
+            if (data && Array.isArray(data)) setKickEmotes(data);
+        });
+    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -42,31 +70,32 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin }) => {
 
         setIsLoading(true);
         setError(null);
+        setShowEmojis(false);
 
         try {
             await sendChatMessage(userToken, broadcasterId, message.trim());
-            setMessage(''); // Clear input on success
+            setMessage('');
         } catch (err) {
             console.error("Chat Error:", err);
-            // Check for auth errors to force re-login
             const errMsg = err.message?.toLowerCase() || '';
             if (errMsg.includes('401') || errMsg.includes('403') || errMsg.includes('unauthorized')) {
                 alert("Tu sesión ha expirado. Por favor, logueate nuevamente.");
                 if (onLogout) onLogout();
             } else {
-                setError('Error al enviar. Intenta de nuevo.');
+                setError('Error al enviar.');
             }
         } finally {
-            setIsLoading(false);
+            if (isLoading) setIsLoading(false);
         }
     };
 
+    const insertText = (text) => {
+        setMessage(prev => prev + (prev.endsWith(' ') || !prev ? '' : ' ') + text + ' ');
+    };
+
     const handleLogin = () => {
-        if (onLogin) {
-            onLogin();
-        } else {
-            initiateLogin();
-        }
+        if (onLogin) onLogin();
+        else initiateLogin();
     };
 
     if (!activeChat) return null;
@@ -86,7 +115,79 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin }) => {
     }
 
     return (
-        <div className="p-3 bg-kick-surface border-t border-white/10 flex flex-col gap-2">
+        <div className="p-3 bg-kick-surface border-t border-white/10 flex flex-col gap-2 relative">
+
+            {/* Emote/Emoji Picker Popup */}
+            {showEmojis && (
+                <div className="absolute bottom-[105%] left-3 right-3 bg-black/95 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-bottom-2 duration-200 flex flex-col max-h-80">
+                    {/* Tabs */}
+                    <div className="flex bg-white/5 p-1 shrink-0">
+                        {['emojis', 'kick', '7tv'].map(tab => (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={`flex-1 py-1.5 text-[10px] font-black uppercase tracking-widest rounded transition-all ${activeTab === tab ? 'bg-kick-green text-black' : 'text-gray-400 hover:text-white'}`}
+                            >
+                                {tab}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="p-4 overflow-y-auto custom-scrollbar flex-grow">
+                        {activeTab === 'emojis' && (
+                            <div className="grid grid-cols-8 gap-2">
+                                {EMOJI_LIST.map((emoji, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => insertText(emoji)}
+                                        className="text-xl hover:bg-white/10 p-1 rounded-lg transition-transform hover:scale-125"
+                                    >
+                                        {emoji}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+
+                        {activeTab === 'kick' && (
+                            <div className="grid grid-cols-6 gap-2">
+                                {kickEmotes.length > 0 ? kickEmotes.map((emote, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => insertText(emote.name)}
+                                        className="hover:bg-white/10 p-1.5 rounded-lg flex items-center justify-center transition-transform hover:scale-110"
+                                        title={emote.name}
+                                    >
+                                        <img
+                                            src={`https://files.kick.com/emotes/${emote.id}/fullsize`}
+                                            alt={emote.name}
+                                            className="w-8 h-8 object-contain"
+                                        />
+                                    </button>
+                                )) : <p className="text-[10px] text-gray-500 text-center py-4 col-span-full">Cargando emotes de Kick...</p>}
+                            </div>
+                        )}
+
+                        {activeTab === '7tv' && (
+                            <div className="grid grid-cols-5 gap-2">
+                                {seventvEmotes.length > 0 ? seventvEmotes.map((emote, idx) => (
+                                    <button
+                                        key={idx}
+                                        onClick={() => insertText(emote.name)}
+                                        className="hover:bg-white/10 p-1.5 rounded-lg flex items-center justify-center transition-transform hover:scale-110"
+                                        title={emote.name}
+                                    >
+                                        <img
+                                            src={emote.data.host.url + '/2x.webp'}
+                                            alt={emote.name}
+                                            className="w-8 h-8 object-contain"
+                                        />
+                                    </button>
+                                )) : <p className="text-[10px] text-gray-500 text-center py-4 col-span-full">No se encontraron emotes de 7TV para este canal.</p>}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* User Logged In Header */}
             <div className="flex items-center justify-between bg-white/5 p-2 rounded-lg">
@@ -106,7 +207,6 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin }) => {
                 <button
                     onClick={onLogout}
                     className="p-1.5 hover:bg-red-500/20 text-gray-400 hover:text-red-400 rounded transition-colors"
-                    title="Cerrar Sesión"
                 >
                     <LogOut size={14} />
                 </button>
@@ -128,14 +228,23 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin }) => {
 
             {/* Input Form */}
             <form onSubmit={handleSubmit} className="relative flex gap-2">
-                <input
-                    type="text"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder={`Mensaje a ${activeChat}...`}
-                    disabled={isLoading || !broadcasterId}
-                    className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-kick-green focus:ring-1 focus:ring-kick-green disabled:opacity-50 disabled:cursor-not-allowed"
-                />
+                <div className="relative flex-1">
+                    <input
+                        type="text"
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        placeholder={`Mensaje a ${activeChat}...`}
+                        disabled={isLoading || !broadcasterId}
+                        className="w-full bg-black/40 border border-white/10 rounded-lg pl-3 pr-10 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-kick-green focus:ring-1 focus:ring-kick-green disabled:opacity-50 disabled:cursor-not-allowed"
+                    />
+                    <button
+                        type="button"
+                        onClick={() => setShowEmojis(!showEmojis)}
+                        className={`absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md transition-colors ${showEmojis ? 'text-kick-green bg-white/5' : 'text-gray-500 hover:text-gray-300'}`}
+                    >
+                        <Smile size={18} />
+                    </button>
+                </div>
                 <button
                     type="submit"
                     disabled={isLoading || !message.trim() || !broadcasterId}
