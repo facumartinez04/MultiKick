@@ -429,13 +429,18 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
 
                     <div className="flex items-center gap-1 md:gap-1.5">
                         {useCustomPlayer && qualities.length > 0 && !isOffline && (
-                            <button
-                                onClick={() => setShowQualityMenu(!showQualityMenu)}
-                                className={`p-1 md:p-1.5 rounded-md hover:bg-white/10 text-white transition-colors ${showQualityMenu ? 'text-kick-green' : ''}`}
-                                title="Calidad"
-                            >
-                                <Settings size={14} className="md:w-4 md:h-4" />
-                            </button>
+                            <div className="relative group/tooltip">
+                                <button
+                                    onClick={() => setShowQualityMenu(!showQualityMenu)}
+                                    className={`p-1 md:p-1.5 rounded-md hover:bg-white/10 text-white transition-colors ${showQualityMenu ? 'text-kick-green' : ''}`}
+                                >
+                                    <Settings size={14} className="md:w-4 md:h-4" />
+                                </button>
+                                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-bold px-2 py-1 rounded shadow-md opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-[60]">
+                                    Calidad
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-[4px] border-transparent border-t-white"></div>
+                                </div>
+                            </div>
                         )}
 
                         <div className="relative group/volume flex items-center">
@@ -446,6 +451,7 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                                 {isMuted ? <VolumeX size={14} className="md:w-4 md:h-4" /> : <Volume2 size={14} className="md:w-4 md:h-4" />}
                             </button>
 
+                            {/* Volume Slider */}
                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 pb-4 opacity-0 group-hover/volume:opacity-100 transition-all duration-200 pointer-events-none group-hover/volume:pointer-events-auto z-50 scale-95 group-hover/volume:scale-100 origin-bottom">
                                 <div className="p-3 bg-black/95 backdrop-blur-md rounded-xl border border-white/10 flex flex-col items-center gap-2 h-32 shadow-2xl min-w-[40px]">
                                     <input
@@ -466,31 +472,49 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                                     <span className="text-[10px] text-white font-black">{Math.round((isMuted ? 0 : volume) * 100)}%</span>
                                 </div>
                             </div>
+
+                            {/* Tooltip for Volume (Optional, added for consistency if slider logic permits, but let's keep it clean: User asked for tooltips above buttons) */}
+                            {/* Decided to NOT add text tooltip for Volume to avoid clash with slider which is the primary hover interaction */}
                         </div>
 
-                        <button
-                            onClick={(e) => { e.stopPropagation(); reload(); }}
-                            className="p-1 md:p-1.5 rounded-md hover:bg-white/10 text-white transition-colors"
-                            title="Recargar Stream"
-                        >
-                            <RefreshCw size={14} className="md:w-4 md:h-4" />
-                        </button>
+                        <div className="relative group/tooltip">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); reload(); }}
+                                className="p-1 md:p-1.5 rounded-md hover:bg-white/10 text-white transition-colors"
+                            >
+                                <RefreshCw size={14} className="md:w-4 md:h-4" />
+                            </button>
+                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-bold px-2 py-1 rounded shadow-md opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-[60]">
+                                Recargar
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-[4px] border-transparent border-t-white"></div>
+                            </div>
+                        </div>
 
-                        <button
-                            onClick={(e) => { e.stopPropagation(); onToggleMaximize(); }}
-                            className="p-1 md:p-1.5 rounded-md hover:bg-white/10 text-white transition-colors"
-                            title={isMaximized ? "Achicar" : "Maximizar en App"}
-                        >
-                            {isMaximized ? <Minimize2 size={14} className="md:w-4 md:h-4" /> : <Maximize size={14} className="md:w-4 md:h-4" />}
-                        </button>
+                        <div className="relative group/tooltip">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onToggleMaximize(); }}
+                                className="p-1 md:p-1.5 rounded-md hover:bg-white/10 text-white transition-colors"
+                            >
+                                {isMaximized ? <Minimize2 size={14} className="md:w-4 md:h-4" /> : <Maximize size={14} className="md:w-4 md:h-4" />}
+                            </button>
+                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-bold px-2 py-1 rounded shadow-md opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-[60]">
+                                {isMaximized ? "Achicar" : "Maximizar"}
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-[4px] border-transparent border-t-white"></div>
+                            </div>
+                        </div>
 
-                        <button
-                            onClick={(e) => { e.stopPropagation(); onRemove(channel); }}
-                            className="p-1 md:p-1.5 rounded-md hover:bg-red-500/20 text-red-400 hover:text-white transition-colors ml-1"
-                            title="Remover"
-                        >
-                            <X size={14} className="md:w-4 md:h-4" />
-                        </button>
+                        <div className="relative group/tooltip ml-1">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onRemove(channel); }}
+                                className="p-1 md:p-1.5 rounded-md hover:bg-red-500/20 text-red-400 hover:text-white transition-colors"
+                            >
+                                <X size={14} className="md:w-4 md:h-4" />
+                            </button>
+                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-bold px-2 py-1 rounded shadow-md opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-[60]">
+                                Remover
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-[4px] border-transparent border-t-white"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
