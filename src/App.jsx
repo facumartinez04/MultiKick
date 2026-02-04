@@ -302,8 +302,11 @@ function App() {
         </div>
 
         {/* Footer */}
-        <div className="absolute bottom-6 text-gray-600 text-sm">
-          Powered by Kick.com
+        <div className="absolute bottom-6 text-gray-600 text-sm flex flex-col items-center gap-1">
+          <span>Powered by Kick.com</span>
+          <span className="opacity-80">
+            Hecho por <a href="https://x.com/_mahada_" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-kick-green font-bold transition-colors">Mahada</a>
+          </span>
         </div>
       </div>
     );
