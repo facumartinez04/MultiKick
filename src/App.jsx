@@ -451,7 +451,7 @@ function App() {
 
       {/* Right Sidebar (Chat) */}
       <div
-        className={`flex-shrink-0 bg-kick-gray border-l border-white/5 transition-all duration-300 flex flex-col ${isChatOpen ? 'w-80 md:w-96 translate-x-0' : 'w-0 translate-x-full opacity-0'
+        className={`flex-shrink-0 bg-kick-gray border-l border-white/5 transition-all duration-300 flex flex-col overflow-hidden ${isChatOpen ? 'w-80 md:w-96 translate-x-0' : 'w-0 translate-x-full opacity-0'
           }`}
       >
         {/* Chat Header / Dropdown */}

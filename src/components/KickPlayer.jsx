@@ -25,9 +25,15 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
     const uptimeIntervalRef = useRef(null);
 
     // 1. Fetch Channel Info with Auto-Retry
+    // 1. Fetch Channel Info with Auto-Retry
     useEffect(() => {
         let isMounted = true;
         let retryTimeout = null;
+
+        // Reset states to force a visual "reload" and cleanup
+        setStreamUrl(null);
+        setIsOffline(false);
+        setStreamStats(null);
 
         const fetchStream = async () => {
             setUseCustomPlayer(true);
@@ -73,7 +79,7 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
             isMounted = false;
             if (retryTimeout) clearTimeout(retryTimeout);
         };
-    }, [channel]);
+    }, [channel, key]);
 
     // Uptime Timer Logic
     useEffect(() => {
