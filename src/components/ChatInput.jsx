@@ -89,7 +89,7 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin }) => {
                 setError('Error al enviar.');
             }
         } finally {
-            if (isLoading) setIsLoading(false);
+            setIsLoading(false);
         }
     };
 
