@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, MonitorPlay, MessageSquare, ArrowLeft, X, Play, VolumeX, LogOut, Maximize2, Minimize2 } from 'lucide-react';
 import KickPlayer from './components/KickPlayer';
+import KickChat from './components/KickChat';
 import ChatInput from './components/ChatInput';
 import { initiateLogin, handleCallback } from './utils/kickAuth';
 
@@ -113,15 +114,6 @@ function App() {
     } else {
       url.searchParams.delete('channels');
     }
-    // If we want to support the "/a/b/c" URL style on update, we'd do this:
-    // window.history.pushState({}, '', '/' + newChannels.join('/'));
-    // But for safety with reload/refresh on static hosts, sticking to query params for internal updates is often safer.
-    // However, the user specifically asked for that format. Let's try to support writing it too if possible,
-    // but mixing path and query can be complex.
-    // Let's strictly follow the request "dejarme poner los canales asi".
-    // I will stick to query params for *saving* state to avoid breaking relative asset paths,
-    // unless the user insists on the URL bar updating to slashes.
-    // The request says "leave me put channels like that AND it opens". This implies reading.
     window.history.pushState({}, '', url);
   };
 
@@ -172,6 +164,10 @@ function App() {
       setActiveChat('');
       setIsStreamActive(false);
     }
+
+    if (maximizedChannel === channelToRemove) {
+      setMaximizedChannel(null);
+    }
   };
 
   const startStream = () => {
@@ -188,17 +184,19 @@ function App() {
   const getGridClass = () => {
     if (maximizedChannel) return 'grid grid-cols-1'; // Full screen override
     const count = channels.length;
+
+    // Improved Responsive Grid Logic
     switch (count) {
       case 0: return 'flex items-center justify-center';
       case 1: return 'grid grid-cols-1';
-      case 2: return 'grid grid-cols-1 md:grid-cols-2';
-      case 3: return 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
-      case 4: return 'grid grid-cols-2';
+      case 2: return 'grid grid-cols-1 sm:grid-cols-2'; // 1 col mobile, 2 col sm+
+      case 3: return 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'; // 1->2->3
+      case 4: return 'grid grid-cols-2'; // 2x2 always (unless very small, but 2 cols usually fits)
       case 5:
-      case 6: return 'grid grid-cols-2 lg:grid-cols-3';
+      case 6: return 'grid grid-cols-2 lg:grid-cols-3'; // 2 cols mobile/tablet, 3 cols desktop
       case 7:
       case 8:
-      case 9: return 'grid grid-cols-2 md:grid-cols-3';
+      case 9: return 'grid grid-cols-2 md:grid-cols-3'; // 2 cols mobile, 3 cols tablet+
       default: return 'flex items-center justify-center';
     }
   };
@@ -355,7 +353,6 @@ function App() {
         </header>
 
         {/* Grid */}
-        {/* Grid */}
         <main className={`flex-1 relative overflow-hidden bg-black/50 ${getGridClass()}`}>
           {channels.map((channel) => {
             // If focused, hide others
@@ -407,33 +404,14 @@ function App() {
 
         {/* Chat Embed */}
         <div className="flex-1 bg-black flex flex-col min-h-0">
-          {!userToken && (
-            <div className="bg-yellow-500/10 border-b border-yellow-500/20 p-2 text-center text-[10px] text-yellow-200 shrink-0 flex items-center justify-between px-3">
-              <span>⚠ Modo Lectura</span>
-              <button
-                onClick={handleLoginClick}
-                className="bg-kick-green text-black px-2 py-1 rounded font-bold hover:bg-kick-green/90 transition-colors"
-              >
-                Conectar para Escribir
-              </button>
-            </div>
-          )}
-
-          <div className="relative flex-1 min-h-0">
+          <div className="relative flex-1 min-h-0 flex flex-col">
             {activeChat ? (
-              <iframe
-                title={`${activeChat} chat`}
-                src={`https://kick.com/popout/${activeChat}/chat`}
-                className="absolute inset-0 w-full h-full border-none"
-              />
+              <KickChat channel={activeChat} active={true} />
             ) : (
               <div className="flex items-center justify-center h-full text-gray-500 text-sm">
                 No chat selected
               </div>
             )}
-
-            {/* Overlay to block iframe interactions if not logged in (optional, but good for UX so they don't try to type in the read-only frame) */}
-            <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black via-transparent to-transparent pointer-events-none" />
           </div>
 
           {/* Custom API Chat Input */}
