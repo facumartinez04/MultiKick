@@ -1,6 +1,6 @@
 export const getChannelInfo = async (channelSlug) => {
     try {
-        const response = await fetch(`https://corsproxy.io/?` + encodeURIComponent(`https://kick.com/api/v2/channels/${channelSlug}`));
+        const response = await fetch(`https://kick.com/api/v2/channels/${channelSlug}`);
         if (!response.ok) throw new Error('Failed to fetch channel info');
         const data = await response.json();
 

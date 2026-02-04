@@ -1,27 +1,32 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, RefreshCw, Volume2, VolumeX, Maximize2, Minimize2, Settings } from 'lucide-react';
-import ReactPlayer from 'react-player';
 import { getChannelInfo } from '../utils/kickApi';
+import Hls from 'hls.js';
 
 const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMaximize }) => {
     const [key, setKey] = useState(0);
     const [isMuted, setIsMuted] = useState(true);
     const [streamUrl, setStreamUrl] = useState(null);
     const [useCustomPlayer, setUseCustomPlayer] = useState(true);
-    const playerRef = useRef(null);
 
+    // Refs for HLS and Video
+    const videoRef = useRef(null);
+    const hlsRef = useRef(null);
+
+    // 1. Fetch Channel Info
     useEffect(() => {
         let isMounted = true;
         const fetchStream = async () => {
-            setUseCustomPlayer(true); // Reset to try custom player first
+            setUseCustomPlayer(true);
             try {
                 const data = await getChannelInfo(channel);
+                console.log("DEBUG API FULL DATA:", data);
 
                 if (isMounted) {
                     if (data && data.playback_url) {
+                        console.log("DEBUG PLAYBACK URL:", data.playback_url);
                         setStreamUrl(data.playback_url);
                     } else {
-                        // If no playback_url found (offline or api change), fall back
                         console.warn(`No playback_url found for ${channel}`);
                         setUseCustomPlayer(false);
                     }
@@ -35,13 +40,88 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
         if (useCustomPlayer) {
             fetchStream();
         }
+
+        return () => { isMounted = false; };
     }, [channel, useCustomPlayer]);
 
+    // 2. Initialize HLS Player
+    useEffect(() => {
+        let hls = null;
+
+        const initPlayer = () => {
+            if (useCustomPlayer && streamUrl && Hls.isSupported() && videoRef.current) {
+                if (hlsRef.current) {
+                    hlsRef.current.destroy();
+                }
+
+                hls = new Hls({
+                    enableWorker: true,
+                    lowLatencyMode: true,
+                    backBufferLength: 90
+                });
+
+                hlsRef.current = hls;
+
+                hls.loadSource(streamUrl);
+                hls.attachMedia(videoRef.current);
+
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    videoRef.current?.play().catch(e => {
+                        console.warn("Autoplay blocked, user interaction needed", e);
+                    });
+                });
+
+                hls.on(Hls.Events.ERROR, function (event, data) {
+                    if (data.fatal) {
+                        switch (data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                console.error("HLS: Network error:", data);
+                                hls.startLoad();
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                console.error("HLS: Media error:", data);
+                                hls.recoverMediaError();
+                                break;
+                            default:
+                                console.error("HLS: Fatal error, destroying:", data);
+                                hls.destroy();
+                                setUseCustomPlayer(false);
+                                break;
+                        }
+                    }
+                });
+            } else if (videoRef.current && videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
+                // Native HLS support (Safari)
+                videoRef.current.src = streamUrl;
+                videoRef.current.addEventListener('loadedmetadata', () => {
+                    videoRef.current.play();
+                });
+            }
+        };
+
+        initPlayer();
+
+        return () => {
+            if (hlsRef.current) {
+                hlsRef.current.destroy();
+            }
+        };
+    }, [streamUrl, useCustomPlayer]);
+
+    // 3. Handle Global Mute
     useEffect(() => {
         if (shouldMuteAll) {
             setIsMuted(true);
         }
     }, [shouldMuteAll]);
+
+    // 4. Syc Mute State with Video Element
+    useEffect(() => {
+        if (videoRef.current) {
+            videoRef.current.muted = isMuted;
+            videoRef.current.volume = isMuted ? 0 : 1;
+        }
+    }, [isMuted]);
 
     const reload = () => {
         setKey(prev => prev + 1);
@@ -49,36 +129,18 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
 
     const toggleMute = () => {
         setIsMuted(!isMuted);
-        // We probably don't need to force key update if src changes, but let's ensure it reloads
-        // React handles src changes on iframes by reloading them.
     };
 
     return (
         <div className="relative w-full h-full bg-black border border-white/5 rounded-xl overflow-hidden flex flex-col group shadow-2xl ring-1 ring-white/5 hover:ring-kick-green/30 transition-all duration-300">
             <div className="flex-grow relative">
                 {useCustomPlayer && streamUrl ? (
-                    <ReactPlayer
-                        ref={playerRef}
-                        key={`player-${key}`}
-                        url={streamUrl}
-                        playing={true}
+                    <video
+                        ref={videoRef}
+                        className="w-full h-full object-cover"
+                        playsInline
                         muted={isMuted}
-                        volume={isMuted ? 0 : 0.5}
-                        playsinline={true}
-                        width="100%"
-                        height="100%"
-                        controls={true} // Enable default controls for quality/volume
-                        config={{
-                            file: {
-                                forceHLS: true,
-                                hlsOptions: {
-                                    autoStartLoad: true,
-                                    startPosition: -1,
-                                    debug: false,
-                                }
-                            }
-                        }}
-                        onError={() => setUseCustomPlayer(false)} // Fallback to iframe
+                        autoPlay
                     />
                 ) : (
                     <iframe
