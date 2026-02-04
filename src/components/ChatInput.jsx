@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Send, Loader2, AlertCircle, LogOut, User, Smile, X } from 'lucide-react';
+import { Send, Loader2, AlertCircle, LogOut, User, Smile, X, Lock, Star } from 'lucide-react';
 import { getChannelInfo, sendChatMessage, getKickEmotes, getChannelEmotes, get7TVEmotes, get7TVGlobalEmotes } from '../utils/kickApi';
 import { initiateLogin, refreshAccessToken } from '../utils/kickAuth';
 
@@ -215,20 +215,38 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
                                     <div>
                                         <p className="text-[9px] font-black text-gray-500 uppercase tracking-tighter mb-2 ml-1">Canal</p>
                                         <div className="grid grid-cols-6 gap-2">
-                                            {kickChannelEmotes.map((emote, idx) => (
-                                                <button
-                                                    key={idx}
-                                                    onClick={() => insertText(emote.name)}
-                                                    className="hover:bg-white/10 p-1.5 rounded-lg flex items-center justify-center transition-transform hover:scale-110"
-                                                    title={emote.name}
-                                                >
-                                                    <img
-                                                        src={`https://files.kick.com/emotes/${emote.id}/fullsize`}
-                                                        alt={emote.name}
-                                                        className="w-8 h-8 object-contain"
-                                                    />
-                                                </button>
-                                            ))}
+                                            {kickChannelEmotes.map((emote, idx) => {
+                                                const isSubOnly = emote.subscribers_only;
+                                                // Assuming strict check for now: only broadcaster can use sub emotes in this implementation
+                                                // Real implementation would require checking if 'userData' is subscribed to 'activeChat' via API
+                                                const canUse = !isSubOnly || (userData?.username?.toLowerCase() === activeChat?.toLowerCase());
+
+                                                return (
+                                                    <button
+                                                        key={idx}
+                                                        onClick={() => canUse && insertText(emote.name)}
+                                                        disabled={!canUse}
+                                                        className={`relative group/emote p-1.5 rounded-lg flex items-center justify-center transition-all ${canUse ? 'hover:bg-white/10 hover:scale-110 cursor-pointer' : 'opacity-40 grayscale cursor-not-allowed'}`}
+                                                        title={isSubOnly && !canUse ? "Solo Suscriptores" : emote.name}
+                                                    >
+                                                        <img
+                                                            src={`https://files.kick.com/emotes/${emote.id}/fullsize`}
+                                                            alt={emote.name}
+                                                            className="w-8 h-8 object-contain"
+                                                        />
+                                                        {isSubOnly && !canUse && (
+                                                            <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg">
+                                                                <Lock size={12} className="text-white" />
+                                                            </div>
+                                                        )}
+                                                        {isSubOnly && canUse && (
+                                                            <div className="absolute top-0 right-0">
+                                                                <Star size={8} className="text-kick-green fill-kick-green" />
+                                                            </div>
+                                                        )}
+                                                    </button>
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 )}
