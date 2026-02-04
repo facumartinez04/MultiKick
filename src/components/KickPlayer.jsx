@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, RefreshCw, Volume2, VolumeX, Maximize2, Minimize2, Maximize, Minimize, Settings, VideoOff, Users, Clock, Gamepad2, User } from 'lucide-react';
+import { X, RefreshCw, Volume2, VolumeX, Maximize2, Minimize2, Maximize, Minimize, Settings, VideoOff, Users, Clock, Gamepad2, User, Zap } from 'lucide-react';
 import { getChannelInfo } from '../utils/kickApi';
 import Hls from 'hls.js';
 
@@ -175,7 +175,11 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                     manifestLoadingTimeOut: 20000,
                     manifestLoadingMaxRetry: 10,
                     levelLoadingMaxRetry: 10,
-                    fragLoadingMaxRetry: 10
+                    fragLoadingMaxRetry: 10,
+                    // Low Latency Optimization
+                    liveSyncDurationCount: 1.5,
+                    liveMaxLatencyDurationCount: 3,
+                    maxLiveSyncPlaybackRate: 2,
                 });
 
                 hlsRef.current = hls;
@@ -295,6 +299,24 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
             if (document.exitFullscreen) document.exitFullscreen();
             else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
             else if (document.msExitFullscreen) document.msExitFullscreen();
+        }
+    };
+
+    const jumpToLive = () => {
+        if (hlsRef.current) {
+            const now = Date.now();
+            hlsRef.current.startLoad(); // Ensure loading
+
+            // Try explicit seek to very end if live
+            if (videoRef.current && videoRef.current.seekable.length > 0) {
+                videoRef.current.currentTime = videoRef.current.seekable.end(0) - 1.0; // 1s buffer
+                videoRef.current.play().catch(console.warn);
+            }
+        } else if (videoRef.current) {
+            // Native Safari
+            if (videoRef.current.seekable.length > 0) {
+                videoRef.current.currentTime = videoRef.current.seekable.end(0) - 1.0;
+            }
         }
     };
 
@@ -475,6 +497,19 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
 
                             {/* Tooltip for Volume (Optional, added for consistency if slider logic permits, but let's keep it clean: User asked for tooltips above buttons) */}
                             {/* Decided to NOT add text tooltip for Volume to avoid clash with slider which is the primary hover interaction */}
+                        </div>
+
+                        <div className="relative group/tooltip">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); jumpToLive(); }}
+                                className="p-1 md:p-1.5 rounded-md hover:bg-white/10 text-white transition-colors"
+                            >
+                                <Zap size={14} className="md:w-4 md:h-4 text-yellow-400 fill-yellow-400" />
+                            </button>
+                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-bold px-2 py-1 rounded shadow-md opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-[60]">
+                                Sacar Delay
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-[4px] border-transparent border-t-white"></div>
+                            </div>
                         </div>
 
                         <div className="relative group/tooltip">
