@@ -84,6 +84,7 @@ function App() {
           setChannels(parsed.channels);
           if (parsed.activeChat) setActiveChat(parsed.activeChat);
           if (parsed.isStreamActive) setIsStreamActive(parsed.isStreamActive);
+          if (parsed.isTopGlobales) setIsTopGlobales(parsed.isTopGlobales);
 
           // Only update URL if we are not already on a path (prevent overwriting OAuth code param visually till cleaned, but strictly we want to be on the channel url)
           // Actually, we should just update it.
@@ -134,7 +135,8 @@ function App() {
     const appState = {
       channels,
       activeChat,
-      isStreamActive
+      isStreamActive,
+      isTopGlobales // Save this flag
     };
     localStorage.setItem('kick_pre_login_state', JSON.stringify(appState));
     initiateLogin();
@@ -388,7 +390,7 @@ function App() {
 
           {/* Epic Title for Top Globales */}
           {isTopGlobales && (
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
+            <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center gap-2 pointer-events-none">
               <span className="text-xl md:text-2xl font-black italic tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-kick-green via-white to-kick-green animate-pulse drop-shadow-[0_0_15px_rgba(83,252,24,0.4)]">
                 ★ LOS TOP GLOBALES ★
               </span>
