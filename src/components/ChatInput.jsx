@@ -3,7 +3,7 @@ import { Send, Loader2, AlertCircle, LogOut, User } from 'lucide-react';
 import { getChannelInfo, sendChatMessage } from '../utils/kickApi';
 import { initiateLogin } from '../utils/kickAuth';
 
-const ChatInput = ({ activeChat, userToken, userData, onLogout }) => {
+const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin }) => {
     const [message, setMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [broadcasterId, setBroadcasterId] = useState(null);
