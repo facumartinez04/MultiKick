@@ -62,7 +62,11 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout }) => {
     };
 
     const handleLogin = () => {
-        initiateLogin();
+        if (onLogin) {
+            onLogin();
+        } else {
+            initiateLogin();
+        }
     };
 
     if (!activeChat) return null;

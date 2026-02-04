@@ -483,7 +483,13 @@ function App() {
           </div>
 
           {/* Custom API Chat Input */}
-          <ChatInput activeChat={activeChat} userToken={userToken} userData={userData} onLogout={handleUserLogout} />
+          <ChatInput
+            activeChat={activeChat}
+            userToken={userToken}
+            userData={userData}
+            onLogout={handleUserLogout}
+            onLogin={handleLoginClick}
+          />
         </div>
 
       </div>
