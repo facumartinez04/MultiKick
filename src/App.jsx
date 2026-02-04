@@ -24,6 +24,7 @@ function App() {
   const [pendingRestore, setPendingRestore] = useState(null); // State for restoration modal
 
   // ... useEffects ...
+  // Load from URL (Path or Query) on mount
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const queryChannels = params.get('channels')?.split(',') || [];
@@ -33,9 +34,14 @@ function App() {
       .map(c => c.trim())
       .filter(c => c.length > 0 && c !== 'index.html'); // Basic filter
 
-    const allChannels = [...pathChannels, ...queryChannels]
+    let allChannels = [...pathChannels, ...queryChannels]
       .map(c => c.trim())
       .filter(c => c.length > 0);
+
+    // --- Custom Shortcut Logic ---
+    if (allChannels.some(c => c.toLowerCase() === 'lostopglobales')) {
+      allChannels = ['duendepablo', 'zeko', 'goncho', 'coker', 'coscu', 'robergalati'];
+    }
 
     const uniqueChannels = [...new Set(allChannels)].slice(0, 9);
 
