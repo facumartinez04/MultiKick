@@ -21,7 +21,7 @@ function App() {
   });
   const [authError, setAuthError] = useState(null);
   const [maximizedChannel, setMaximizedChannel] = useState(null);
-  const [pendingRestore, setPendingRestore] = useState(null); // State for restoration modal
+
 
   // ... useEffects ...
   // Load from URL (Path or Query) on mount
@@ -78,12 +78,20 @@ function App() {
       try {
         const parsed = JSON.parse(savedState);
         if (parsed && parsed.channels && parsed.channels.length > 0) {
-          setPendingRestore(parsed);
+          console.log("Restoring session automatically...", parsed);
+          setChannels(parsed.channels);
+          if (parsed.activeChat) setActiveChat(parsed.activeChat);
+          if (parsed.isStreamActive) setIsStreamActive(parsed.isStreamActive);
+
+          // Only update URL if we are not already on a path (prevent overwriting OAuth code param visually till cleaned, but strictly we want to be on the channel url)
+          // Actually, we should just update it.
+          updateUrl(parsed.channels);
         }
       } catch (e) {
         console.error("Failed to parse saved state", e);
-        localStorage.removeItem('kick_pre_login_state');
       }
+      // Clean up immediately so it doesn't persist on future reloads unless set again
+      localStorage.removeItem('kick_pre_login_state');
     }
   }, []);
 
