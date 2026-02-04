@@ -23,6 +23,7 @@ function App() {
   const [authError, setAuthError] = useState(null);
   const [maximizedChannel, setMaximizedChannel] = useState(null);
   const [isTopGlobales, setIsTopGlobales] = useState(false);
+  const [chatPermissions, setChatPermissions] = useState({ isSubscriber: false, isBroadcaster: false, isModerator: false });
 
   // Cache for channel avatars
   const [channelAvatars, setChannelAvatars] = useState({});
@@ -36,6 +37,12 @@ function App() {
 
 
   // ... useEffects ...
+  // Load from URL (Path or Query) on mount
+  // Reset permissions when active chat changes
+  useEffect(() => {
+    setChatPermissions({ isSubscriber: false, isBroadcaster: false, isModerator: false });
+  }, [activeChat]);
+
   // Load from URL (Path or Query) on mount
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -190,6 +197,10 @@ function App() {
     if (newData.refresh_token) {
       localStorage.setItem('kick_refresh_token', newData.refresh_token);
     }
+  };
+
+  const handlePermissionsUpdate = (perms) => {
+    setChatPermissions(prev => ({ ...prev, ...perms }));
   };
 
 
@@ -573,7 +584,12 @@ function App() {
           {/* Optional close button overlay if desired, but back button covers it */}
           <div className="relative flex-1 min-h-0 flex flex-col">
             {activeChat ? (
-              <KickChat channel={activeChat} active={true} />
+              <KickChat
+                channel={activeChat}
+                active={true}
+                userData={userData}
+                onPermissionsUpdate={handlePermissionsUpdate}
+              />
             ) : (
               <div className="flex items-center justify-center h-full text-gray-500 text-sm">
                 No chat selected
@@ -589,6 +605,7 @@ function App() {
             onLogout={handleUserLogout}
             onLogin={handleLoginClick}
             onTokenUpdate={handleTokenUpdate}
+            permissions={chatPermissions}
           />
         </div>
 

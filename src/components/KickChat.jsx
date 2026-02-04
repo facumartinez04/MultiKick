@@ -6,7 +6,7 @@ import { ShieldCheck, Gem, Star, Crown } from 'lucide-react';
 const KICK_PUSHER_KEY = '32cbd69e4b950bf97679';
 const KICK_PUSHER_CLUSTER = 'us2';
 
-const KickChat = ({ channel, active }) => {
+const KickChat = ({ channel, active, userData, onPermissionsUpdate }) => {
     const [messages, setMessages] = useState([]);
     const [chatroomId, setChatroomId] = useState(null);
     const [connectionStatus, setConnectionStatus] = useState('Disconnected');
@@ -15,6 +15,12 @@ const KickChat = ({ channel, active }) => {
     const bottomRef = useRef(null);
     const pusherRef = useRef(null);
     const channelRef = useRef(null);
+    const userDataRef = useRef(userData);
+
+    // Keep userData ref up to date
+    useEffect(() => {
+        userDataRef.current = userData;
+    }, [userData]);
 
     // 1. Fetch Chatroom ID & 7TV Emotes
     useEffect(() => {
@@ -109,6 +115,24 @@ const KickChat = ({ channel, active }) => {
                 if (newMsgs.length > 100) return newMsgs.slice(-100);
                 return newMsgs;
             });
+
+            // Check permissions dynamically from chat
+            const currentUser = userDataRef.current;
+            if (currentUser && parsed?.sender?.username?.toLowerCase() === currentUser?.username?.toLowerCase() && onPermissionsUpdate) {
+                const badges = parsed.sender.identity?.badges || [];
+                let isSub = false;
+                let isMod = false;
+                let isBroadcaster = false;
+
+                badges.forEach(b => {
+                    const t = (b.type || b.name || '').toLowerCase();
+                    if (t === 'subscriber' || t === 'founder' || t === 'og') isSub = true;
+                    if (t === 'moderator') isMod = true;
+                    if (t === 'broadcaster') isBroadcaster = true;
+                });
+
+                onPermissionsUpdate({ isSubscriber: isSub, isModerator: isMod, isBroadcaster: isBroadcaster });
+            }
         });
 
         return () => {

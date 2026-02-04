@@ -10,7 +10,7 @@ const EMOJI_LIST = [
     '🔥', '✨', '🌟', '🌈', '⚡', '☄️', '💧', '🌊', '👑', '💎', '🎨', '🎬', '🎤', '🎧', '🎮', '🕹️', '🚀', '🛸', '🛰️', '💡', '💰', '💸', '🎁', '🎈', '🎉', '🎊', '🎀', '🪄'
 ];
 
-const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onTokenUpdate }) => {
+const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onTokenUpdate, permissions }) => {
     const [message, setMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [broadcasterId, setBroadcasterId] = useState(null);
@@ -27,6 +27,15 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
     const [isSubscriber, setIsSubscriber] = useState(false);
     const [isBroadcaster, setIsBroadcaster] = useState(false);
     const [isModerator, setIsModerator] = useState(false);
+
+    // Sync permissions from parent (Chat detection)
+    useEffect(() => {
+        if (permissions) {
+            if (permissions.isSubscriber) setIsSubscriber(true);
+            if (permissions.isBroadcaster) setIsBroadcaster(true);
+            if (permissions.isModerator) setIsModerator(true);
+        }
+    }, [permissions]);
 
     // 1. Fetch Broadcaster & Emotes
     useEffect(() => {
