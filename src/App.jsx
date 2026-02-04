@@ -135,6 +135,14 @@ function App() {
     updateUrl([]);
   };
 
+  const handleUserLogout = () => {
+    // Only Clear Auth
+    localStorage.removeItem('kick_access_token');
+    localStorage.removeItem('kick_user');
+    setUserToken(null);
+    setUserData(null);
+  };
+
   const updateUrl = (newChannels) => {
     const url = new URL(window.location);
     // We will favor the query param for updates to avoid navigation issues,
@@ -475,7 +483,7 @@ function App() {
           </div>
 
           {/* Custom API Chat Input */}
-          <ChatInput activeChat={activeChat} userToken={userToken} userData={userData} onLogout={handleReset} />
+          <ChatInput activeChat={activeChat} userToken={userToken} userData={userData} onLogout={handleUserLogout} />
         </div>
 
       </div>
