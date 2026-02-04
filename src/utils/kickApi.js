@@ -110,13 +110,18 @@ export const getChannelEmotes = async (channelSlug, token = null) => {
     }
 };
 
-export const getChannelUserRelationship = async (channelSlug, token) => {
+export const getChannelUserRelationship = async (channelSlug, token = null) => {
     try {
+        const headers = {
+            'Accept': 'application/json'
+        };
+
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
         const response = await fetch(`https://kick.com/api/v2/channels/${channelSlug}/me`, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Accept': 'application/json'
-            }
+            headers
         });
 
         if (!response.ok) return null;

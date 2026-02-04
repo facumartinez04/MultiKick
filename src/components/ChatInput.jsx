@@ -25,6 +25,8 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
     const [seventvEmotes, setSeventvEmotes] = useState([]);
     const [seventvGlobalEmotes, setSeventvGlobalEmotes] = useState([]);
     const [isSubscriber, setIsSubscriber] = useState(false);
+    const [isBroadcaster, setIsBroadcaster] = useState(false);
+    const [isModerator, setIsModerator] = useState(false);
 
     // 1. Fetch Broadcaster & Emotes
     useEffect(() => {
@@ -81,10 +83,10 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
                 if (token) {
                     const relData = await getChannelUserRelationship(activeChat, token);
                     if (isMounted && relData) {
-                        // Check if subscription exists and is active
-                        if (relData.subscription) {
-                            setIsSubscriber(true);
-                        }
+                        // Update permissions based on API response
+                        setIsSubscriber(!!relData.subscription);
+                        setIsBroadcaster(!!relData.is_broadcaster);
+                        setIsModerator(!!relData.is_moderator);
                     }
                 }
             } catch (e) {
@@ -233,8 +235,7 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
                                                 const isSubOnly = emote.subscribers_only;
                                                 // Assuming strict check for now: only broadcaster can use sub emotes in this implementation
                                                 // Real implementation would require checking if 'userData' is subscribed to 'activeChat' via API
-                                                const isBroadcaster = (userData?.username?.toLowerCase() === activeChat?.toLowerCase());
-                                                const canUse = !isSubOnly || isSubscriber || isBroadcaster;
+                                                const canUse = !isSubOnly || isSubscriber || isBroadcaster || isModerator;
 
                                                 return (
                                                     <button
