@@ -58,8 +58,10 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
             try {
                 const data = await getChannelInfo(channel);
                 if (isMounted) {
-                    if (data && data.playback_url) {
-                        console.log(`[${channel}] Stream URL found.`);
+                    // Strict check: Must have playback_url AND be live
+                    const isLive = data?.livestream?.is_live;
+                    if (data && data.playback_url && isLive) {
+                        console.log(`[${channel}] Stream URL found & Live.`);
                         setStreamUrl(data.playback_url);
                         setIsOffline(false);
 
@@ -315,8 +317,7 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                         <div className="w-16 h-16 mb-4 rounded-full bg-white/5 flex items-center justify-center animate-pulse">
                             <VideoOff size={32} className="text-gray-500" />
                         </div>
-                        <p className="font-bold text-lg text-gray-400">{channel} is Offline</p>
-                        <p className="text-xs text-kick-green mt-2 font-mono">RETRYING SIGNAL...</p>
+                        <p className="font-bold text-lg text-gray-400">{channel} está Desconectado</p>
                     </div>
                 ) : useCustomPlayer && streamUrl ? (
                     <video

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Send, Loader2, AlertCircle, LogOut, User, Smile, X } from 'lucide-react';
-import { getChannelInfo, sendChatMessage, getKickEmotes, get7TVEmotes, get7TVGlobalEmotes } from '../utils/kickApi';
+import { getChannelInfo, sendChatMessage, getKickEmotes, getChannelEmotes, get7TVEmotes, get7TVGlobalEmotes } from '../utils/kickApi';
 import { initiateLogin } from '../utils/kickAuth';
 
 const EMOJI_LIST = [
@@ -21,6 +21,7 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin }) => {
 
     // Emotes State
     const [kickEmotes, setKickEmotes] = useState([]);
+    const [kickChannelEmotes, setKickChannelEmotes] = useState([]);
     const [seventvEmotes, setSeventvEmotes] = useState([]);
     const [seventvGlobalEmotes, setSeventvGlobalEmotes] = useState([]);
 
@@ -33,8 +34,18 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin }) => {
             setError(null);
             setBroadcasterId(null);
             setSeventvEmotes([]);
+            setKickChannelEmotes([]);
 
             try {
+                // Fetch Kick Channel Emotes
+                const kChanData = await getChannelEmotes(activeChat);
+                if (isMounted) {
+                    if (Array.isArray(kChanData)) setKickChannelEmotes(kChanData);
+                    else if (kChanData?.emotes) setKickChannelEmotes(kChanData.emotes);
+                    // Check common structure variations (e.g. data.emotes)
+                    else if (kChanData?.data?.emotes) setKickChannelEmotes(kChanData.data.emotes);
+                }
+
                 const info = await getChannelInfo(activeChat);
                 if (isMounted && info) {
                     const id = info.user_id || info.userId || info.id;
@@ -153,21 +164,54 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin }) => {
                         )}
 
                         {activeTab === 'kick' && (
-                            <div className="grid grid-cols-6 gap-2">
-                                {kickEmotes.length > 0 ? kickEmotes.map((emote, idx) => (
-                                    <button
-                                        key={idx}
-                                        onClick={() => insertText(emote.name)}
-                                        className="hover:bg-white/10 p-1.5 rounded-lg flex items-center justify-center transition-transform hover:scale-110"
-                                        title={emote.name}
-                                    >
-                                        <img
-                                            src={`https://files.kick.com/emotes/${emote.id}/fullsize`}
-                                            alt={emote.name}
-                                            className="w-8 h-8 object-contain"
-                                        />
-                                    </button>
-                                )) : <p className="text-[10px] text-gray-500 text-center py-4 col-span-full">Cargando emotes de Kick...</p>}
+                            <div className="flex flex-col gap-4">
+                                {kickChannelEmotes.length > 0 && (
+                                    <div>
+                                        <p className="text-[9px] font-black text-gray-500 uppercase tracking-tighter mb-2 ml-1">Canal</p>
+                                        <div className="grid grid-cols-6 gap-2">
+                                            {kickChannelEmotes.map((emote, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    onClick={() => insertText(emote.name)}
+                                                    className="hover:bg-white/10 p-1.5 rounded-lg flex items-center justify-center transition-transform hover:scale-110"
+                                                    title={emote.name}
+                                                >
+                                                    <img
+                                                        src={`https://files.kick.com/emotes/${emote.id}/fullsize`}
+                                                        alt={emote.name}
+                                                        className="w-8 h-8 object-contain"
+                                                    />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {kickEmotes.length > 0 && (
+                                    <div>
+                                        <p className="text-[9px] font-black text-gray-500 uppercase tracking-tighter mb-2 ml-1 border-t border-white/5 pt-3">Global</p>
+                                        <div className="grid grid-cols-6 gap-2">
+                                            {kickEmotes.map((emote, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    onClick={() => insertText(emote.name)}
+                                                    className="hover:bg-white/10 p-1.5 rounded-lg flex items-center justify-center transition-transform hover:scale-110"
+                                                    title={emote.name}
+                                                >
+                                                    <img
+                                                        src={`https://files.kick.com/emotes/${emote.id}/fullsize`}
+                                                        alt={emote.name}
+                                                        className="w-8 h-8 object-contain"
+                                                    />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {kickEmotes.length === 0 && kickChannelEmotes.length === 0 && (
+                                    <p className="text-[10px] text-gray-500 text-center py-4 col-span-full">Cargando emotes de Kick...</p>
+                                )}
                             </div>
                         )}
 

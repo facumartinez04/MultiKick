@@ -70,3 +70,29 @@ export const get7TVGlobalEmotes = async () => {
         return [];
     }
 };
+
+export const getChannelEmotes = async (channelSlug) => {
+    try {
+        // User requested URL: https://kick.com/emotes/[channel]
+        // We try to fetch from there, but handle if it's not JSON (fallback to API v2)
+        const response = await fetch(`https://kick.com/emotes/${channelSlug}`, {
+            headers: { 'Accept': 'application/json' }
+        });
+
+        const contentType = response.headers.get("content-type");
+        if (response.ok && contentType && contentType.includes("application/json")) {
+            return await response.json();
+        }
+
+        // Fallback: API V2
+        const v2Response = await fetch(`https://kick.com/api/v2/channels/${channelSlug}/emotes`);
+        if (v2Response.ok) {
+            return await v2Response.json();
+        }
+
+        return [];
+    } catch (e) {
+        console.error("Error fetching kick channel emotes:", e);
+        return [];
+    }
+};
