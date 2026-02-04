@@ -311,7 +311,8 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                 ) : useCustomPlayer && streamUrl ? (
                     <video
                         ref={videoRef}
-                        className="w-full h-full object-contain bg-black"
+                        onClick={toggleMute}
+                        className="w-full h-full object-contain bg-black cursor-pointer"
                         playsInline
                         muted={isMuted}
                         autoPlay
@@ -319,6 +320,22 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                 ) : (
                     <div className="absolute inset-0 flex items-center justify-center bg-black">
                         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-kick-green"></div>
+                    </div>
+                )}
+
+                {/* Small Muted Toggle (Top Right) */}
+                {isMuted && !isOffline && (
+                    <div className="absolute top-3 right-12 z-40">
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setIsMuted(false);
+                            }}
+                            className="bg-black/80 backdrop-blur-md border border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white text-[10px] font-black px-3 py-1 rounded flex items-center gap-2 transition-all shadow-xl animate-in zoom-in-95"
+                        >
+                            <VolumeX size={12} />
+                            <span className="tracking-widest uppercase">MUTEADO - CLICK PARA ESCUCHAR</span>
+                        </button>
                     </div>
                 )}
 

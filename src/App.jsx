@@ -243,23 +243,28 @@ function App() {
   };
 
   const getGridClass = () => {
-    if (maximizedChannel) return 'grid grid-cols-1'; // Full screen override
-    const count = channels.length;
+    if (maximizedChannel) return 'grid grid-cols-1 grid-rows-1 h-full w-full';
 
-    // Improved Responsive Grid Logic
-    switch (count) {
-      case 0: return 'flex items-center justify-center';
-      case 1: return 'grid grid-cols-1';
-      case 2: return 'grid grid-cols-2'; // Force 2 cols on mobile
-      case 3: return 'grid grid-cols-2 lg:grid-cols-3'; // Force 2 cols on mobile
-      case 4: return 'grid grid-cols-2'; // 2x2 always (unless very small, but 2 cols usually fits)
-      case 5:
-      case 6: return 'grid grid-cols-2 lg:grid-cols-3'; // 2 cols mobile/tablet, 3 cols desktop
-      case 7:
-      case 8:
-      case 9: return 'grid grid-cols-2 md:grid-cols-3'; // 2 cols mobile, 3 cols tablet+
-      default: return 'flex items-center justify-center';
-    }
+    const count = channels.length;
+    // Base: h-full w-full grid auto-rows-fr (forces rows to split height equally)
+    const base = "grid h-full w-full [grid-auto-rows:1fr]";
+
+    if (count === 0) return 'flex items-center justify-center h-full w-full';
+
+    // 1 Stream: 1x1
+    if (count === 1) return `${base} grid-cols-1`;
+
+    // 2 Streams: 2x1 (Side by side always per request)
+    if (count === 2) return `${base} grid-cols-2`;
+
+    // 3-4 Streams: 2x2
+    if (count <= 4) return `${base} grid-cols-2`;
+
+    // 5-6 Streams: 2 cols mobile, 3 cols desktop (2x3 mobile, 3x2 desktop)
+    if (count <= 6) return `${base} grid-cols-2 md:grid-cols-3`;
+
+    // 7-9 Streams: 2 cols mobile, 3 cols desktop
+    return `${base} grid-cols-2 md:grid-cols-3`;
   };
 
   // --- Views ---
