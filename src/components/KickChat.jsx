@@ -147,6 +147,7 @@ const KickChat = ({ channel, active }) => {
     const renderTextWith7TV = (text, keyPrefix) => {
         if (!text) return null;
         const words = text.split(' ');
+        const urlRegex = /^(https?:\/\/[^\s]+)/;
 
         return words.map((word, i) => {
             if (emoteMap[word]) {
@@ -160,6 +161,24 @@ const KickChat = ({ channel, active }) => {
                     />
                 );
             }
+
+            if (urlRegex.test(word)) {
+                return (
+                    <span key={`${keyPrefix}-${i}`}>
+                        <a
+                            href={word}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-kick-green hover:underline break-all"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {word}
+                        </a>
+                        {i < words.length - 1 ? ' ' : ''}
+                    </span>
+                );
+            }
+
             return word + (i < words.length - 1 ? ' ' : '');
         });
     };
