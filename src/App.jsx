@@ -324,6 +324,9 @@ function App() {
           <span className="opacity-80">
             Hecho por <a href="https://x.com/_mahada_" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-kick-green font-bold transition-colors">Mahada</a>
           </span>
+          <span className="text-[10px] opacity-50 mt-1">
+            No estamos afiliados con Kick.com
+          </span>
         </div>
       </div>
     );

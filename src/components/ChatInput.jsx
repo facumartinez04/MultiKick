@@ -88,14 +88,14 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout }) => {
             <div className="flex items-center justify-between bg-white/5 p-2 rounded-lg">
                 <div className="flex items-center gap-2 overflow-hidden">
                     <div className="w-6 h-6 rounded-full bg-kick-green flex items-center justify-center shrink-0 overflow-hidden border border-white/10">
-                        {userData?.profile_pic ? (
-                            <img src={userData.profile_pic} alt="User" className="w-full h-full object-cover" />
+                        {userData?.profile_picture ? (
+                            <img src={userData.profile_picture} alt="User" className="w-full h-full object-cover" />
                         ) : (
                             <User size={14} className="text-black" />
                         )}
                     </div>
                     <span className="text-xs font-bold text-white truncate max-w-[100px]">
-                        {userData?.username || 'Usuario'}
+                        {userData?.name || userData?.username || 'Usuario'}
                     </span>
                 </div>
 
