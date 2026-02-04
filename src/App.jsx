@@ -21,6 +21,7 @@ function App() {
   });
   const [authError, setAuthError] = useState(null);
   const [maximizedChannel, setMaximizedChannel] = useState(null);
+  const [isTopGlobales, setIsTopGlobales] = useState(false);
 
 
   // ... useEffects ...
@@ -41,6 +42,7 @@ function App() {
     // --- Custom Shortcut Logic ---
     if (allChannels.some(c => c.toLowerCase() === 'lostopglobales')) {
       allChannels = ['duendepablo', 'zeko', 'goncho', 'coker', 'coscu', 'robergalati'];
+      setIsTopGlobales(true);
     }
 
     const uniqueChannels = [...new Set(allChannels)].slice(0, 9);
@@ -366,7 +368,7 @@ function App() {
       {/* Main Content (Streams) */}
       <div className="flex-1 flex flex-col h-full min-w-0 transition-all duration-300">
         {/* Minimal Header */}
-        <header className="h-14 bg-kick-gray border-b border-white/5 flex items-center justify-between px-4 shrink-0 z-20">
+        <header className="relative h-14 bg-kick-gray border-b border-white/5 flex items-center justify-between px-4 shrink-0 z-20">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsStreamActive(false)}
@@ -380,9 +382,18 @@ function App() {
               <div className="w-8 h-8 flex items-center justify-center">
                 <img src="https://kick.com/img/kick-logo.svg" alt="Kick Logo" className="w-full h-full object-contain" />
               </div>
-              <span className="font-bold text-white/90 hidden sm:block">MultiKick</span>
+              {!isTopGlobales && <span className="font-bold text-white/90 hidden sm:block">MultiKick</span>}
             </div>
           </div>
+
+          {/* Epic Title for Top Globales */}
+          {isTopGlobales && (
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
+              <span className="text-xl md:text-2xl font-black italic tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-kick-green via-white to-kick-green animate-pulse drop-shadow-[0_0_15px_rgba(83,252,24,0.4)]">
+                ★ LOS TOP GLOBALES ★
+              </span>
+            </div>
+          )}
 
           <div className="flex items-center gap-2">
             <button
@@ -513,46 +524,7 @@ function App() {
 
       </div>
 
-      {/* Restore Session Modal */}
-      {pendingRestore && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-          <div className="bg-kick-dark border border-white/10 p-6 rounded-2xl shadow-2xl max-w-md w-full text-center space-y-4">
-            <div className="w-16 h-16 bg-kick-green/20 text-kick-green rounded-full flex items-center justify-center mx-auto mb-2">
-              <MonitorPlay size={32} />
-            </div>
-            <h2 className="text-2xl font-bold text-white">¡Sesión Recuperada!</h2>
-            <p className="text-gray-400">
-              Encontramos tu sesión anterior con
-              <span className="text-white font-bold mx-1">{pendingRestore.channels.length} stream(s)</span>
-              abiertos.
-            </p>
 
-            <div className="flex flex-col gap-2 mt-4">
-              <button
-                onClick={() => {
-                  setChannels(pendingRestore.channels);
-                  if (pendingRestore.activeChat) setActiveChat(pendingRestore.activeChat);
-                  if (pendingRestore.isStreamActive) setIsStreamActive(pendingRestore.isStreamActive);
-                  updateUrl(pendingRestore.channels);
-                  setPendingRestore(null);
-                }}
-                className="w-full bg-kick-green text-black font-bold py-3 rounded-xl hover:scale-[1.02] transition-transform text-lg"
-              >
-                Volver a ver streams ({pendingRestore.channels.join(', ')})
-              </button>
-              <button
-                onClick={() => {
-                  setPendingRestore(null);
-                  localStorage.removeItem('kick_pre_login_state');
-                }}
-                className="w-full bg-white/5 text-gray-400 font-bold py-3 rounded-xl hover:bg-white/10 hover:text-white transition-colors"
-              >
-                Empezar de cero
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
