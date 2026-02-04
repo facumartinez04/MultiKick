@@ -20,8 +20,10 @@ const ChatInput = ({ activeChat, userToken }) => {
 
             const info = await getChannelInfo(activeChat);
             if (isMounted) {
-                if (info && info.userId) {
-                    setBroadcasterId(info.userId);
+                // Update to handle new API structure which returns user_id
+                const id = info?.user_id || info?.userId;
+                if (id) {
+                    setBroadcasterId(id);
                 } else {
                     setError('Error obteniendo ID del canal');
                 }

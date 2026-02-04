@@ -1,14 +1,12 @@
 export const getChannelInfo = async (channelSlug) => {
     try {
-        const response = await fetch(`https://multikick.com/api/kick/${channelSlug}`);
+        const response = await fetch(`https://kick.com/api/v2/channels/${channelSlug}`);
         if (!response.ok) throw new Error('Failed to fetch channel info');
         const data = await response.json();
-        return {
-            userId: data.user_id,
-            chatroomId: data.chatroom?.id
-        };
+
+        return data;
     } catch (error) {
-        console.error("Error fetching channel info:", error);
+        console.error("DEBUG: Error fetching channel info for", channelSlug, error);
         return null;
     }
 };

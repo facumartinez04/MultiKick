@@ -4,7 +4,7 @@ import ReactPlayer from 'react-player';
 
 const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMaximize }) => {
     const [key, setKey] = useState(0);
-    const [isMuted, setIsMuted] = useState(false);
+    const [isMuted, setIsMuted] = useState(true);
     const [streamUrl, setStreamUrl] = useState(null);
     const [useCustomPlayer, setUseCustomPlayer] = useState(true);
     const playerRef = useRef(null);
@@ -14,7 +14,7 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
         const fetchStream = async () => {
             // User requested to hit this specific API
             try {
-                const response = await fetch(`https://multikick.com/api/kick/${channel}`);
+                const response = await fetch(`https://kick.com/api/v2/channels/${channel}`);
                 if (!response.ok) throw new Error('API Fail');
                 const data = await response.json();
 
