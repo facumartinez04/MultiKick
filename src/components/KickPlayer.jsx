@@ -390,24 +390,26 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                                 {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
                             </button>
 
-                            {/* Volume Slider - Vertical Popover */}
-                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-3 bg-black/90 backdrop-blur-md rounded-xl border border-white/10 opacity-0 group-hover/volume:opacity-100 transition-all duration-200 pointer-events-none group-hover/volume:pointer-events-auto flex flex-col items-center gap-2 h-32 shadow-2xl scale-95 group-hover/volume:scale-100 origin-bottom">
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="1"
-                                    step="0.05"
-                                    value={isMuted ? 0 : volume}
-                                    onChange={(e) => {
-                                        const newVal = parseFloat(e.target.value);
-                                        setVolume(newVal);
-                                        if (newVal > 0) setIsMuted(false);
-                                        else setIsMuted(true);
-                                    }}
-                                    className="h-20 accent-kick-green cursor-pointer appearance-none bg-white/10 rounded-lg w-1.5"
-                                    style={{ WebkitAppearance: 'slider-vertical' }}
-                                />
-                                <span className="text-[10px] text-white font-black">{Math.round((isMuted ? 0 : volume) * 100)}%</span>
+                            {/* Volume Slider - Vertical Popover with Bridge */}
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 pb-4 opacity-0 group-hover/volume:opacity-100 transition-all duration-200 pointer-events-none group-hover/volume:pointer-events-auto z-50 scale-95 group-hover/volume:scale-100 origin-bottom">
+                                <div className="p-3 bg-black/95 backdrop-blur-md rounded-xl border border-white/10 flex flex-col items-center gap-2 h-32 shadow-2xl min-w-[40px]">
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="1"
+                                        step="0.05"
+                                        value={isMuted ? 0 : volume}
+                                        onChange={(e) => {
+                                            const newVal = parseFloat(e.target.value);
+                                            setVolume(newVal);
+                                            if (newVal > 0) setIsMuted(false);
+                                            else setIsMuted(true);
+                                        }}
+                                        className="h-20 accent-kick-green cursor-pointer appearance-none bg-white/10 rounded-lg w-1.5"
+                                        style={{ WebkitAppearance: 'slider-vertical' }}
+                                    />
+                                    <span className="text-[10px] text-white font-black">{Math.round((isMuted ? 0 : volume) * 100)}%</span>
+                                </div>
                             </div>
                         </div>
 
