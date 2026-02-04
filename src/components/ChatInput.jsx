@@ -40,10 +40,27 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
                 // Fetch Kick Channel Emotes
                 const kChanData = await getChannelEmotes(activeChat);
                 if (isMounted) {
-                    if (Array.isArray(kChanData)) setKickChannelEmotes(kChanData);
-                    else if (kChanData?.emotes) setKickChannelEmotes(kChanData.emotes);
-                    // Check common structure variations (e.g. data.emotes)
-                    else if (kChanData?.data?.emotes) setKickChannelEmotes(kChanData.data.emotes);
+                    if (Array.isArray(kChanData)) {
+                        // The API returns an array of emote sets.
+                        // 1. Channel Emotes (usually first, has 'slug')
+                        // 2. Global Emotes (name: "Global")
+                        // 3. Emojis (name: "Emojis")
+
+                        const channelSet = kChanData.find(x => x.slug || x.id === parseInt(broadcasterId)) || kChanData[0];
+                        if (channelSet?.emotes) {
+                            setKickChannelEmotes(channelSet.emotes);
+                        }
+
+                        // Collect others (Global + Emojis) to add to general Kick emotes if needed
+                        const otherSets = kChanData.filter(x => x !== channelSet);
+                        const extraEmotes = otherSets.flatMap(x => x.emotes || []);
+
+                        // We will set these to kickEmotes, but we also fetch getKickEmotes() separately.
+                        // Let's rely on getKickEmotes() for clean globals, but push "Emojis" from here if we want them.
+                        // For now, let's just make sure channel emotes work.
+                    } else if (kChanData?.emotes) {
+                        setKickChannelEmotes(kChanData.emotes);
+                    }
                 }
 
                 const info = await getChannelInfo(activeChat);

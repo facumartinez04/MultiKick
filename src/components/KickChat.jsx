@@ -43,7 +43,10 @@ const KickChat = ({ channel, active }) => {
 
                     // Add Kick Channel Emotes to Map
                     if (Array.isArray(kickChannelEmotes)) {
-                        kickChannelEmotes.forEach(e => {
+                        // Flatten the structure: [ {emotes:[]}, {emotes:[]} ]
+                        const allEmotes = kickChannelEmotes.flatMap(category => category.emotes || []);
+
+                        allEmotes.forEach(e => {
                             if (e.id && e.name) {
                                 map[e.name] = `https://files.kick.com/emotes/${e.id}/fullsize`;
                             }
