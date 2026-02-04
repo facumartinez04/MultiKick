@@ -10,7 +10,7 @@ function App() {
   const [inputChannel, setInputChannel] = useState('');
   const [isStreamActive, setIsStreamActive] = useState(false);
   const [activeChat, setActiveChat] = useState('');
-  const [isChatOpen, setIsChatOpen] = useState(true);
+  const [isChatOpen, setIsChatOpen] = useState(() => window.innerWidth >= 768); // Closed on mobile by default
   const [shouldMuteAll, setShouldMuteAll] = useState(0);
   const [userToken, setUserToken] = useState(localStorage.getItem('kick_access_token'));
   const [userData, setUserData] = useState(() => {
@@ -250,8 +250,8 @@ function App() {
     switch (count) {
       case 0: return 'flex items-center justify-center';
       case 1: return 'grid grid-cols-1';
-      case 2: return 'grid grid-cols-1 sm:grid-cols-2'; // 1 col mobile, 2 col sm+
-      case 3: return 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'; // 1->2->3
+      case 2: return 'grid grid-cols-2'; // Force 2 cols on mobile
+      case 3: return 'grid grid-cols-2 lg:grid-cols-3'; // Force 2 cols on mobile
       case 4: return 'grid grid-cols-2'; // 2x2 always (unless very small, but 2 cols usually fits)
       case 5:
       case 6: return 'grid grid-cols-2 lg:grid-cols-3'; // 2 cols mobile/tablet, 3 cols desktop

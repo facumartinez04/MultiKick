@@ -233,7 +233,10 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
     };
 
     return (
-        <div className="relative w-full h-full bg-black border border-white/5 rounded-xl overflow-hidden flex flex-col group shadow-2xl ring-1 ring-white/5 hover:ring-kick-green/30 transition-all duration-300">
+        <div
+            onDoubleClick={onToggleMaximize}
+            className="relative w-full h-full bg-black border border-white/5 rounded-xl overflow-hidden flex flex-col group shadow-2xl ring-1 ring-white/5 hover:ring-kick-green/30 transition-all duration-300 pointer-events-auto"
+        >
 
             {/* --- OVERLAY STATS (Top Left) --- */}
             <div className="absolute top-4 left-4 z-30 flex flex-col gap-2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
