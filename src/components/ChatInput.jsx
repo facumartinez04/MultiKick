@@ -51,13 +51,11 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
                             setKickChannelEmotes(channelSet.emotes);
                         }
 
-                        // Collect others (Global + Emojis) to add to general Kick emotes if needed
-                        const otherSets = kChanData.filter(x => x !== channelSet);
-                        const extraEmotes = otherSets.flatMap(x => x.emotes || []);
-
-                        // We will set these to kickEmotes, but we also fetch getKickEmotes() separately.
-                        // Let's rely on getKickEmotes() for clean globals, but push "Emojis" from here if we want them.
-                        // For now, let's just make sure channel emotes work.
+                        // Extract Global Emotes
+                        const globalSet = kChanData.find(x => x.name === 'Global');
+                        if (globalSet?.emotes) {
+                            setKickEmotes(globalSet.emotes);
+                        }
                     } else if (kChanData?.emotes) {
                         setKickChannelEmotes(kChanData.emotes);
                     }
