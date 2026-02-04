@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Send, Loader2, AlertCircle, LogOut, User, Smile, X, Lock, Star } from 'lucide-react';
-import { getChannelInfo, sendChatMessage, getKickEmotes, getChannelEmotes, get7TVEmotes, get7TVGlobalEmotes } from '../utils/kickApi';
+import { getChannelInfo, sendChatMessage, getKickEmotes, getChannelEmotes, get7TVEmotes, get7TVGlobalEmotes, getChannelUserRelationship } from '../utils/kickApi';
 import { initiateLogin, refreshAccessToken } from '../utils/kickAuth';
 
 const EMOJI_LIST = [
@@ -24,6 +24,7 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
     const [kickChannelEmotes, setKickChannelEmotes] = useState([]);
     const [seventvEmotes, setSeventvEmotes] = useState([]);
     const [seventvGlobalEmotes, setSeventvGlobalEmotes] = useState([]);
+    const [isSubscriber, setIsSubscriber] = useState(false);
 
     // 1. Fetch Broadcaster & Emotes
     useEffect(() => {
@@ -71,6 +72,16 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
                         if (isMounted) setSeventvEmotes(tvEmotes);
                     } else {
                         setError('Error ID');
+                    }
+                }
+
+                if (userToken) {
+                    const relData = await getChannelUserRelationship(activeChat, userToken);
+                    if (isMounted && relData) {
+                        // Check if subscription exists and is active
+                        if (relData.subscription) {
+                            setIsSubscriber(true);
+                        }
                     }
                 }
             } catch (e) {
@@ -219,7 +230,8 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
                                                 const isSubOnly = emote.subscribers_only;
                                                 // Assuming strict check for now: only broadcaster can use sub emotes in this implementation
                                                 // Real implementation would require checking if 'userData' is subscribed to 'activeChat' via API
-                                                const canUse = !isSubOnly || (userData?.username?.toLowerCase() === activeChat?.toLowerCase());
+                                                const isBroadcaster = (userData?.username?.toLowerCase() === activeChat?.toLowerCase());
+                                                const canUse = !isSubOnly || isSubscriber || isBroadcaster;
 
                                                 return (
                                                     <button

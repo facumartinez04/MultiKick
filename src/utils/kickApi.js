@@ -95,3 +95,20 @@ export const getChannelEmotes = async (channelSlug) => {
         return [];
     }
 };
+
+export const getChannelUserRelationship = async (channelSlug, token) => {
+    try {
+        const response = await fetch(`https://kick.com/api/v2/channels/${channelSlug}/me`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json'
+            }
+        });
+
+        if (!response.ok) return null;
+        return await response.json();
+    } catch (e) {
+        console.error("Error fetching channel user relationship:", e);
+        return null;
+    }
+};
