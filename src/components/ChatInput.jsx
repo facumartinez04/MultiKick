@@ -39,7 +39,7 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
 
             try {
                 // Fetch Kick Channel Emotes
-                const kChanData = await getChannelEmotes(activeChat);
+                const kChanData = await getChannelEmotes(activeChat, userToken);
                 if (isMounted) {
                     if (Array.isArray(kChanData)) {
                         // The API returns an array of emote sets.
@@ -62,7 +62,7 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
                     }
                 }
 
-                const info = await getChannelInfo(activeChat);
+                const info = await getChannelInfo(activeChat, userToken);
                 if (isMounted && info) {
                     const id = info.user_id || info.userId || info.id;
                     if (id) {
