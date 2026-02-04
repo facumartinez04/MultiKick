@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Pusher from 'pusher-js';
-import { getChannelInfo } from '../utils/kickApi';
-import { MessageSquare, Users } from 'lucide-react';
+import { getChannelInfo, get7TVEmotes, get7TVGlobalEmotes } from '../utils/kickApi';
 
 const KICK_PUSHER_KEY = '32cbd69e4b950bf97679';
 const KICK_PUSHER_CLUSTER = 'us2';
@@ -10,11 +9,13 @@ const KickChat = ({ channel, active }) => {
     const [messages, setMessages] = useState([]);
     const [chatroomId, setChatroomId] = useState(null);
     const [connectionStatus, setConnectionStatus] = useState('Disconnected');
+    const [emoteMap, setEmoteMap] = useState({}); // { name: url }
+
     const bottomRef = useRef(null);
     const pusherRef = useRef(null);
     const channelRef = useRef(null);
 
-    // 1. Fetch Chatroom ID
+    // 1. Fetch Chatroom ID & 7TV Emotes
     useEffect(() => {
         if (!channel) return;
 
@@ -26,6 +27,19 @@ const KickChat = ({ channel, active }) => {
                 if (data && data.chatroom && data.chatroom.id) {
                     setChatroomId(data.chatroom.id);
                     setConnectionStatus('Connecting Socket...');
+
+                    // Fetch 7TV Emotes for this channel
+                    const userId = data.user_id || data.id;
+                    const channelEmotes = await get7TVEmotes(userId);
+                    const globalEmotes = await get7TVGlobalEmotes();
+
+                    // Create lookup map
+                    const map = {};
+                    [...globalEmotes, ...channelEmotes].forEach(e => {
+                        map[e.name] = e.data.host.url + '/2x.webp';
+                    });
+                    setEmoteMap(map);
+
                 } else {
                     setConnectionStatus('Error: No Chatroom ID');
                 }
@@ -47,54 +61,29 @@ const KickChat = ({ channel, active }) => {
             pusherRef.current.disconnect();
         }
 
-        console.log(`[KickChat] Initializing Pusher for Chatroom: ${chatroomId}`);
-
         const pusher = new Pusher(KICK_PUSHER_KEY, {
             cluster: KICK_PUSHER_CLUSTER,
             encrypted: true,
             forceTLS: true,
             disableStats: true,
-            enabledTransports: ['ws', 'wss'] // Force WS to avoid HTTP fallbacks that might lag
+            enabledTransports: ['ws', 'wss']
         });
 
         pusherRef.current = pusher;
 
-        // Debug Connection States
         pusher.connection.bind('state_change', (states) => {
-            console.log(`[KickChat] Connection state: ${states.current}`);
             setConnectionStatus(`State: ${states.current}`);
         });
 
-        pusher.connection.bind('connected', () => {
-            console.log('[KickChat] Connected to Pusher Server.');
-        });
-
-        pusher.connection.bind('error', (err) => {
-            console.error('[KickChat] Connection Error:', err);
-            setConnectionStatus('Connection Error');
-        });
-
-        // Channel Subscription
         const channelName = `chatrooms.${chatroomId}.v2`;
-        console.log(`[KickChat] Subscribing to ${channelName}`);
-
         const channelSub = pusher.subscribe(channelName);
         channelRef.current = channelSub;
 
         channelSub.bind('pusher:subscription_succeeded', () => {
             setConnectionStatus('Online & Listening');
-            console.log("[KickChat] Subscription Succeeded!");
         });
 
-        channelSub.bind('pusher:subscription_error', (status) => {
-            setConnectionStatus('Auth/Sub Error');
-            console.error("[KickChat] Subscription Error:", status);
-        });
-
-        // Listen for messages
         channelSub.bind('App\\Events\\ChatMessageEvent', (data) => {
-            // console.log("Raw Message:", data);
-            // Ensure data is parsed if string
             let parsed = data;
             if (typeof data === 'string') {
                 try { parsed = JSON.parse(data); } catch (e) { }
@@ -109,7 +98,6 @@ const KickChat = ({ channel, active }) => {
 
         return () => {
             if (pusherRef.current) {
-                console.log('[KickChat] Disconnecting...');
                 pusherRef.current.unsubscribe(channelName);
                 pusherRef.current.disconnect();
             }
@@ -118,34 +106,19 @@ const KickChat = ({ channel, active }) => {
 
     const containerRef = useRef(null);
     const [autoScroll, setAutoScroll] = useState(true);
-    const [showScrollButton, setShowScrollButton] = useState(false);
-
-    // ... (existing effects)
 
     // 3. Auto-scroll Logic
     useEffect(() => {
         if (autoScroll && containerRef.current) {
-            // Use instant scroll for performance/snappiness on high traffic
             containerRef.current.scrollTop = containerRef.current.scrollHeight;
         }
     }, [messages, autoScroll]);
 
-    // Detect manual scroll
     const handleScroll = () => {
         if (!containerRef.current) return;
         const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
-
-        // If user scrolls up (distance > 50px from bottom)
-        const distanceToBottom = scrollHeight - scrollTop - clientHeight;
-        const isAtBottom = distanceToBottom < 50;
-
-        if (isAtBottom) {
-            setAutoScroll(true);
-            setShowScrollButton(false);
-        } else {
-            setAutoScroll(false);
-            setShowScrollButton(true);
-        }
+        const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
+        setAutoScroll(isAtBottom);
     };
 
     const scrollToBottom = () => {
@@ -155,29 +128,50 @@ const KickChat = ({ channel, active }) => {
         }
     };
 
-    // Render Message Content (text + emotes)
+    // Render 7TV Emotes within a text part
+    const renderTextWith7TV = (text, keyPrefix) => {
+        if (!text) return null;
+        const words = text.split(' ');
+
+        return words.map((word, i) => {
+            if (emoteMap[word]) {
+                return (
+                    <img
+                        key={`${keyPrefix}-${i}`}
+                        src={emoteMap[word]}
+                        alt={word}
+                        title={word}
+                        className="inline-block h-8 align-middle mx-1"
+                    />
+                );
+            }
+            return word + (i < words.length - 1 ? ' ' : '');
+        });
+    };
+
+    // Render Message Content (text + kick emotes + 7TV emotes)
     const renderContent = (content) => {
         if (!content) return null;
 
         // Regex for Kick Emotes: [emote:37230:POLICE]
-        const emoteRegex = /\[emote:(\d+):([\w]+)\]/g;
-
-        const parts = [];
+        const kickEmoteRegex = /\[emote:(\d+):([\w]+)\]/g;
+        const result = [];
         let lastIndex = 0;
         let match;
 
-        while ((match = emoteRegex.exec(content)) !== null) {
-            // Push text before the emote
+        while ((match = kickEmoteRegex.exec(content)) !== null) {
+            // Text before Kick emote (check for 7TV here)
             if (match.index > lastIndex) {
-                parts.push(content.substring(lastIndex, match.index));
+                const textBefore = content.substring(lastIndex, match.index);
+                result.push(renderTextWith7TV(textBefore, `text-${lastIndex}`));
             }
 
-            // Push the emote image
+            // Push the Kick Emote
             const emoteId = match[1];
             const emoteName = match[2];
-            parts.push(
+            result.push(
                 <img
-                    key={`${emoteId}-${match.index}`}
+                    key={`kick-${match.index}`}
                     src={`https://files.kick.com/emotes/${emoteId}/fullsize`}
                     alt={emoteName}
                     title={emoteName}
@@ -185,18 +179,18 @@ const KickChat = ({ channel, active }) => {
                 />
             );
 
-            lastIndex = emoteRegex.lastIndex;
+            lastIndex = kickEmoteRegex.lastIndex;
         }
 
-        // Push remaining text
+        // Remaining text after last Kick emote (check for 7TV here)
         if (lastIndex < content.length) {
-            parts.push(content.substring(lastIndex));
+            const remainingText = content.substring(lastIndex);
+            result.push(renderTextWith7TV(remainingText, `text-end-${lastIndex}`));
         }
 
-        return parts.length > 0 ? parts : content;
+        return result;
     };
 
-    // Map status for display and color
     const getStatusInfo = () => {
         const s = connectionStatus.toLowerCase();
         if (s.includes('online') || s.includes('connected')) return { label: 'Conectado', color: 'text-kick-green', dot: 'bg-kick-green' };
@@ -211,7 +205,6 @@ const KickChat = ({ channel, active }) => {
 
     return (
         <div className="flex-1 bg-black flex flex-col h-full overflow-hidden font-sans text-sm relative">
-            {/* Status Bar */}
             <div className="bg-white/5 px-3 py-1.5 text-[10px] flex justify-between uppercase tracking-wider shrink-0 border-b border-white/5">
                 <div className="flex items-center gap-2">
                     <span className={`w-1.5 h-1.5 rounded-full ${statusInfo.dot}`}></span>
@@ -219,23 +212,21 @@ const KickChat = ({ channel, active }) => {
                 </div>
             </div>
 
-            {/* Messages Area */}
             <div
                 ref={containerRef}
                 onScroll={handleScroll}
                 className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar relative"
             >
-                {messages.length === 0 && connectionStatus === 'Connected' && (
+                {messages.length === 0 && connectionStatus.includes('Online') && (
                     <div className="text-center text-gray-500 mt-10 italic opacity-50">
-                        Waiting for messages...
+                        Esperando mensajes...
                     </div>
                 )}
 
                 {messages.map((msg, i) => {
                     const sender = msg.sender || {};
                     const identity = sender.identity || {};
-                    // Colors
-                    const color = identity.color || '#53fc18'; // Kick Green default
+                    const color = identity.color || '#53fc18';
 
                     return (
                         <div key={msg.id || i} className="group break-words leading-relaxed animate-in fade-in slide-in-from-left-2 duration-200">
@@ -253,7 +244,6 @@ const KickChat = ({ channel, active }) => {
                 })}
             </div>
 
-            {/* Scroll Paused Alert / Resume Button */}
             {!autoScroll && (
                 <div className="absolute bottom-4 left-0 right-0 flex justify-center z-10 pointer-events-none">
                     <button
@@ -271,3 +261,4 @@ const KickChat = ({ channel, active }) => {
 };
 
 export default KickChat;
+

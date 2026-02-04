@@ -333,7 +333,6 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                 ) : useCustomPlayer && streamUrl ? (
                     <video
                         ref={videoRef}
-                        onClick={toggleMute}
                         className="w-full h-full object-contain bg-black cursor-pointer"
                         playsInline
                         muted={isMuted}
