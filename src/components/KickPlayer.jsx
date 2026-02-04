@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, RefreshCw, Volume2, VolumeX, Maximize2, Minimize2, Maximize, Minimize, Settings, VideoOff, Users, Clock, Gamepad2, User, Zap } from 'lucide-react';
+import { X, RefreshCw, Volume2, VolumeX, Maximize2, Minimize2, Maximize, Minimize, Settings, VideoOff, Users, Clock, Gamepad2, User, Zap, Play, Pause } from 'lucide-react';
 import { getChannelInfo } from '../utils/kickApi';
 import Hls from 'hls.js';
 
@@ -29,6 +29,7 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [showMobileControls, setShowMobileControls] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
+    const [isPlaying, setIsPlaying] = useState(true);
 
     // Mobile Detection
     useEffect(() => {
@@ -286,6 +287,19 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
     const toggleMute = () => setIsMuted(!isMuted);
     const reload = () => setKey(prev => prev + 1);
 
+    const togglePlay = (e) => {
+        e.stopPropagation();
+        if (videoRef.current) {
+            if (isPlaying) {
+                videoRef.current.pause();
+                if (hlsRef.current) hlsRef.current.stopLoad();
+            } else {
+                jumpToLive();
+            }
+            setIsPlaying(!isPlaying);
+        }
+    };
+
     const toggleFullscreen = (e) => {
         e.stopPropagation();
         if (!playerRef.current) return;
@@ -450,6 +464,19 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                     </div>
 
                     <div className="flex items-center gap-1 md:gap-1.5">
+                        <div className="relative group/tooltip">
+                            <button
+                                onClick={togglePlay}
+                                className="p-1 md:p-1.5 rounded-md hover:bg-white/10 text-white transition-colors"
+                            >
+                                {isPlaying ? <Pause size={14} className="md:w-4 md:h-4" /> : <Play size={14} className="md:w-4 md:h-4" />}
+                            </button>
+                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-bold px-2 py-1 rounded shadow-md opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-[60]">
+                                {isPlaying ? "Pausar" : "Reproducir"}
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-[4px] border-transparent border-t-white"></div>
+                            </div>
+                        </div>
+
                         {useCustomPlayer && qualities.length > 0 && !isOffline && (
                             <div className="relative group/tooltip">
                                 <button

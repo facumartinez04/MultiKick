@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Pusher from 'pusher-js';
-import { getChannelInfo, get7TVEmotes, get7TVGlobalEmotes } from '../utils/kickApi';
+import { getChannelInfo, get7TVEmotes, get7TVGlobalEmotes, getChannelEmotes } from '../utils/kickApi';
 import { ShieldCheck, Gem, Star, Crown } from 'lucide-react';
 
 const KICK_PUSHER_KEY = '32cbd69e4b950bf97679';
@@ -33,12 +33,23 @@ const KickChat = ({ channel, active }) => {
                     const userId = data.user_id || data.id;
                     const channelEmotes = await get7TVEmotes(userId);
                     const globalEmotes = await get7TVGlobalEmotes();
+                    const kickChannelEmotes = await getChannelEmotes(channel); // Fetch Kick Channel Emotes
 
                     // Create lookup map
                     const map = {};
                     [...globalEmotes, ...channelEmotes].forEach(e => {
                         map[e.name] = e.data.host.url + '/2x.webp';
                     });
+
+                    // Add Kick Channel Emotes to Map
+                    if (Array.isArray(kickChannelEmotes)) {
+                        kickChannelEmotes.forEach(e => {
+                            if (e.id && e.name) {
+                                map[e.name] = `https://files.kick.com/emotes/${e.id}/fullsize`;
+                            }
+                        });
+                    }
+
                     setEmoteMap(map);
 
                 } else {
@@ -276,19 +287,17 @@ const KickChat = ({ channel, active }) => {
 
                     return (
                         <div key={msg.id || i} className="group break-words leading-relaxed animate-in fade-in slide-in-from-left-2 duration-200">
-                            <div className="flex items-start">
-                                <div className="flex items-center mr-2 shrink-0 select-none">
-                                    {renderBadges(identity.badges)}
-                                    <span
-                                        className="font-bold hover:underline cursor-pointer"
-                                        style={{ color: color }}
-                                    >
-                                        {sender.username}
-                                    </span>
-                                    <span className="text-gray-400 mx-1">:</span>
-                                </div>
-                            </div>
-                            <span className="text-gray-300 break-all">
+                            <span className="mr-1 align-middle inline-flex items-center gap-0.5 select-none relative -top-[1px]">
+                                {renderBadges(identity.badges)}
+                            </span>
+                            <span
+                                className="font-bold hover:underline cursor-pointer mr-0.5"
+                                style={{ color: color }}
+                            >
+                                {sender.username}
+                            </span>
+                            <span className="text-gray-400 mr-1.5">:</span>
+                            <span className="text-gray-300">
                                 {renderContent(msg.content)}
                             </span>
                         </div>
