@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, RefreshCw, Volume2, VolumeX, Maximize2, Minimize2, Settings, VideoOff, Users, Clock, Gamepad2, User } from 'lucide-react';
+import { X, RefreshCw, Volume2, VolumeX, Maximize2, Minimize2, Maximize, Minimize, Settings, VideoOff, Users, Clock, Gamepad2, User } from 'lucide-react';
 import { getChannelInfo } from '../utils/kickApi';
 import Hls from 'hls.js';
 
@@ -21,11 +21,28 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
     const [showQualityMenu, setShowQualityMenu] = useState(false);
 
     // Refs
+    const playerRef = useRef(null);
     const videoRef = useRef(null);
     const hlsRef = useRef(null);
     const uptimeIntervalRef = useRef(null);
 
-    // 1. Fetch Channel Info with Auto-Retry
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
+    // Sync Fullscreen State
+    useEffect(() => {
+        const handleFsChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+        document.addEventListener('fullscreenchange', handleFsChange);
+        document.addEventListener('webkitfullscreenchange', handleFsChange);
+        document.addEventListener('mozfullscreenchange', handleFsChange);
+        return () => {
+            document.removeEventListener('fullscreenchange', handleFsChange);
+            document.removeEventListener('webkitfullscreenchange', handleFsChange);
+            document.removeEventListener('mozfullscreenchange', handleFsChange);
+        };
+    }, []);
+
     // 1. Fetch Channel Info with Auto-Retry
     useEffect(() => {
         let isMounted = true;
@@ -200,9 +217,10 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
             }
         };
 
-        initPlayer();
+        const timer = setTimeout(initPlayer, 100);
 
         return () => {
+            clearTimeout(timer);
             if (hlsRef.current) {
                 hlsRef.current.destroy();
             }
@@ -233,6 +251,22 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
     const toggleMute = () => setIsMuted(!isMuted);
     const reload = () => setKey(prev => prev + 1);
 
+    const toggleFullscreen = (e) => {
+        e.stopPropagation();
+        if (!playerRef.current) return;
+
+        if (!document.fullscreenElement) {
+            const el = playerRef.current;
+            if (el.requestFullscreen) el.requestFullscreen();
+            else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+            else if (el.msRequestFullscreen) el.msRequestFullscreen();
+        } else {
+            if (document.exitFullscreen) document.exitFullscreen();
+            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+            else if (document.msExitFullscreen) document.msExitFullscreen();
+        }
+    };
+
     // Format Viewers (e.g. 12.5k)
     const formatViewers = (count) => {
         if (count >= 1000) return (count / 1000).toFixed(1) + 'k';
@@ -241,28 +275,23 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
 
     return (
         <div
+            ref={playerRef}
             onDoubleClick={onToggleMaximize}
             className="relative w-full h-full bg-black border border-white/5 rounded-xl overflow-hidden flex flex-col group shadow-2xl ring-1 ring-white/5 hover:ring-kick-green/30 transition-all duration-300 pointer-events-auto"
         >
 
             {/* --- OVERLAY STATS (Top Left) --- */}
             <div className="absolute top-4 left-4 z-30 flex flex-col gap-2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                {/* Row 1: LIVE Badge + Name + Viewers */}
                 <div className="flex items-center gap-2">
-                    {/* LIVE Badge */}
                     {!isOffline && streamStats?.isLive && (
                         <div className="bg-red-600 text-white text-[10px] font-black px-1.5 py-0.5 rounded flex items-center gap-1 shadow-md">
                             <span>LIVE</span>
                         </div>
                     )}
-
-                    {/* Channel Name */}
                     <div className="bg-black/80 backdrop-blur-md text-white/90 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1.5 shadow-md border border-white/5">
                         <User size={10} className="text-kick-green" />
                         <span className="uppercase tracking-wide">{channel}</span>
                     </div>
-
-                    {/* Viewers */}
                     {streamStats?.viewers !== undefined && (
                         <div className="bg-black/80 backdrop-blur-md text-white/90 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1.5 shadow-md border border-white/5">
                             <Users size={10} className="text-kick-green" />
@@ -270,18 +299,13 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                         </div>
                     )}
                 </div>
-
-                {/* Row 2: Category + Uptime */}
                 <div className="flex items-center gap-2">
-                    {/* Category */}
                     {streamStats?.category && (
                         <div className="bg-black/80 backdrop-blur-md text-white/90 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1.5 shadow-md border border-white/5">
                             <Gamepad2 size={10} className="text-kick-green" />
                             <span className="truncate max-w-[100px]">{streamStats.category}</span>
                         </div>
                     )}
-
-                    {/* Uptime */}
                     {!isOffline && streamStats?.startTime && (
                         <div className="bg-black/80 backdrop-blur-md text-white/90 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1.5 shadow-md border border-white/5 font-mono">
                             <Clock size={10} className="text-kick-green" />
@@ -291,7 +315,6 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                 </div>
             </div>
 
-            {/* Branding Watermark (Moved to Bottom Right lightly) */}
             <div className="absolute bottom-16 right-4 z-20 pointer-events-none opacity-20 group-hover:opacity-50 transition-opacity">
                 <span className="text-white/80 font-black italic tracking-tighter text-[10px] drop-shadow-md">
                     MULTIKICK<span className="text-kick-green">.LAT</span>
@@ -299,8 +322,6 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
             </div>
 
             <div className="flex-grow relative bg-zinc-900">
-
-                {/* Visual Offline State */}
                 {isOffline ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900/95 z-10 p-4 text-center">
                         <div className="w-16 h-16 mb-4 rounded-full bg-white/5 flex items-center justify-center animate-pulse">
@@ -324,7 +345,6 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                     </div>
                 )}
 
-                {/* Small Muted Toggle (Top Right) */}
                 {isMuted && !isOffline && (
                     <div className="absolute top-3 right-12 z-40">
                         <button
@@ -340,7 +360,6 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                     </div>
                 )}
 
-                {/* Quality Menu Overlay */}
                 {showQualityMenu && useCustomPlayer && (
                     <div className="absolute bottom-16 right-4 z-30 bg-black/90 border border-white/10 rounded-lg p-2 flex flex-col gap-1 min-w-[100px] shadow-xl backdrop-blur-md">
                         <button
@@ -361,22 +380,17 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                     </div>
                 )}
 
-                {/* Controls Bar */}
                 <div className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 flex items-center justify-between gap-2 transform translate-y-[10px] group-hover:translate-y-0">
-
-                    {/* Left: Channel Info (Minimal Now) */}
                     <div className="flex items-center gap-2">
                         <span className={`w-2 h-2 rounded-full ${isOffline ? 'bg-gray-500' : 'bg-kick-green animate-pulse shadow-[0_0_10px_#53fc18]'}`}></span>
-                        {/* Name moved to top overlay, keeping here just for backup context if overlay hidden */}
                     </div>
 
-                    {/* Right: Actions */}
                     <div className="flex items-center gap-1.5">
                         {useCustomPlayer && qualities.length > 0 && !isOffline && (
                             <button
                                 onClick={() => setShowQualityMenu(!showQualityMenu)}
                                 className={`p-1.5 rounded-md hover:bg-white/10 text-white transition-colors ${showQualityMenu ? 'text-kick-green' : ''}`}
-                                title="Quality"
+                                title="Calidad"
                             >
                                 <Settings size={16} />
                             </button>
@@ -384,13 +398,12 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
 
                         <div className="relative group/volume flex items-center">
                             <button
-                                onClick={toggleMute}
+                                onClick={(e) => { e.stopPropagation(); toggleMute(); }}
                                 className="p-1.5 rounded-md hover:bg-white/10 text-white transition-colors"
                             >
                                 {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
                             </button>
 
-                            {/* Volume Slider - Vertical Popover with Bridge */}
                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 pb-4 opacity-0 group-hover/volume:opacity-100 transition-all duration-200 pointer-events-none group-hover/volume:pointer-events-auto z-50 scale-95 group-hover/volume:scale-100 origin-bottom">
                                 <div className="p-3 bg-black/95 backdrop-blur-md rounded-xl border border-white/10 flex flex-col items-center gap-2 h-32 shadow-2xl min-w-[40px]">
                                     <input
@@ -414,22 +427,36 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                         </div>
 
                         <button
-                            onClick={reload}
+                            onClick={(e) => { e.stopPropagation(); reload(); }}
                             className="p-1.5 rounded-md hover:bg-white/10 text-white transition-colors"
+                            title="Recargar Stream"
                         >
                             <RefreshCw size={16} />
                         </button>
 
                         <button
-                            onClick={onToggleMaximize}
+                            onClick={(e) => { e.stopPropagation(); onToggleMaximize(); }}
                             className="p-1.5 rounded-md hover:bg-white/10 text-white transition-colors"
+                            title={isMaximized ? "Achicar" : "Maximizar en App"}
                         >
                             {isMaximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
                         </button>
+                        {/* Native Fullscreen */}
+                        <button
+                            onClick={toggleFullscreen}
+                            className={`flex items-center gap-1.5 px-2 py-1 rounded bg-white/10 hover:bg-kick-green hover:text-black transition-all group/fs ${isFullscreen ? 'text-kick-green' : 'text-white'}`}
+                            title={isFullscreen ? "Salir" : "Pantalla Completa"}
+                        >
+                            {isFullscreen ? <Minimize size={14} /> : <Maximize size={14} />}
+                            <span className="text-[10px] font-black tracking-tighter uppercase">
+                                {isFullscreen ? "SALIR" : "PANTALLA COMPLETA"}
+                            </span>
+                        </button>
 
                         <button
-                            onClick={() => onRemove(channel)}
+                            onClick={(e) => { e.stopPropagation(); onRemove(channel); }}
                             className="p-1.5 rounded-md hover:bg-red-500/20 text-red-400 hover:text-white transition-colors ml-1"
+                            title="Remover"
                         >
                             <X size={16} />
                         </button>
