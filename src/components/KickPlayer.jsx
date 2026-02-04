@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, RefreshCw, Volume2, VolumeX, Maximize2, Minimize2, Settings, VideoOff } from 'lucide-react';
+import { X, RefreshCw, Volume2, VolumeX, Maximize2, Minimize2, Settings, VideoOff, Users, Clock, Gamepad2, User } from 'lucide-react';
 import { getChannelInfo } from '../utils/kickApi';
 import Hls from 'hls.js';
 
@@ -10,6 +10,10 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
     const [useCustomPlayer, setUseCustomPlayer] = useState(true);
     const [isOffline, setIsOffline] = useState(false);
 
+    // Stream Stats
+    const [streamStats, setStreamStats] = useState(null);
+    const [uptime, setUptime] = useState('00:00:00');
+
     // Quality Control State
     const [qualities, setQualities] = useState([]);
     const [currentQuality, setCurrentQuality] = useState(-1); // -1 = Auto
@@ -18,6 +22,7 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
     // Refs
     const videoRef = useRef(null);
     const hlsRef = useRef(null);
+    const uptimeIntervalRef = useRef(null);
 
     // 1. Fetch Channel Info with Auto-Retry
     useEffect(() => {
@@ -33,10 +38,22 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                         console.log(`[${channel}] Stream URL found.`);
                         setStreamUrl(data.playback_url);
                         setIsOffline(false);
+
+                        // Parse Stats
+                        if (data.livestream) {
+                            const startTime = new Date(data.livestream.created_at).getTime();
+                            setStreamStats({
+                                viewers: data.livestream.viewer_count || 0,
+                                category: data.livestream.categories?.[0]?.name || 'Just Chatting',
+                                startTime: startTime,
+                                isLive: data.livestream.is_live
+                            });
+                        }
                     } else {
                         console.warn(`[${channel}] No playback_url. Retrying in 5s...`);
                         setIsOffline(true);
                         setStreamUrl(null);
+                        setStreamStats(null);
                         // Retry loop
                         retryTimeout = setTimeout(fetchStream, 5000);
                     }
@@ -57,6 +74,30 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
             if (retryTimeout) clearTimeout(retryTimeout);
         };
     }, [channel]);
+
+    // Uptime Timer Logic
+    useEffect(() => {
+        if (uptimeIntervalRef.current) clearInterval(uptimeIntervalRef.current);
+
+        if (streamStats && streamStats.isLive && streamStats.startTime) {
+            uptimeIntervalRef.current = setInterval(() => {
+                const now = Date.now();
+                const diff = now - streamStats.startTime;
+
+                const hours = Math.floor(diff / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                setUptime(
+                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+                );
+            }, 1000);
+        }
+
+        return () => {
+            if (uptimeIntervalRef.current) clearInterval(uptimeIntervalRef.current);
+        };
+    }, [streamStats]);
 
     // 2. Initialize HLS Player & Quality Handling
     useEffect(() => {
@@ -185,11 +226,64 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
     const toggleMute = () => setIsMuted(!isMuted);
     const reload = () => setKey(prev => prev + 1);
 
+    // Format Viewers (e.g. 12.5k)
+    const formatViewers = (count) => {
+        if (count >= 1000) return (count / 1000).toFixed(1) + 'k';
+        return count;
+    };
+
     return (
         <div className="relative w-full h-full bg-black border border-white/5 rounded-xl overflow-hidden flex flex-col group shadow-2xl ring-1 ring-white/5 hover:ring-kick-green/30 transition-all duration-300">
-            {/* Branding Watermark */}
-            <div className="absolute top-4 left-4 z-20 pointer-events-none opacity-50 group-hover:opacity-100 transition-opacity">
-                <span className="text-white/80 font-black italic tracking-tighter text-sm drop-shadow-md">
+
+            {/* --- OVERLAY STATS (Top Left) --- */}
+            <div className="absolute top-4 left-4 z-30 flex flex-col gap-2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                {/* Row 1: LIVE Badge + Name + Viewers */}
+                <div className="flex items-center gap-2">
+                    {/* LIVE Badge */}
+                    {!isOffline && streamStats?.isLive && (
+                        <div className="bg-red-600 text-white text-[10px] font-black px-1.5 py-0.5 rounded flex items-center gap-1 shadow-md">
+                            <span>LIVE</span>
+                        </div>
+                    )}
+
+                    {/* Channel Name */}
+                    <div className="bg-black/80 backdrop-blur-md text-white/90 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1.5 shadow-md border border-white/5">
+                        <User size={10} className="text-kick-green" />
+                        <span className="uppercase tracking-wide">{channel}</span>
+                    </div>
+
+                    {/* Viewers */}
+                    {streamStats?.viewers !== undefined && (
+                        <div className="bg-black/80 backdrop-blur-md text-white/90 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1.5 shadow-md border border-white/5">
+                            <Users size={10} className="text-kick-green" />
+                            <span>{formatViewers(streamStats.viewers)}</span>
+                        </div>
+                    )}
+                </div>
+
+                {/* Row 2: Category + Uptime */}
+                <div className="flex items-center gap-2">
+                    {/* Category */}
+                    {streamStats?.category && (
+                        <div className="bg-black/80 backdrop-blur-md text-white/90 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1.5 shadow-md border border-white/5">
+                            <Gamepad2 size={10} className="text-kick-green" />
+                            <span className="truncate max-w-[100px]">{streamStats.category}</span>
+                        </div>
+                    )}
+
+                    {/* Uptime */}
+                    {!isOffline && streamStats?.startTime && (
+                        <div className="bg-black/80 backdrop-blur-md text-white/90 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1.5 shadow-md border border-white/5 font-mono">
+                            <Clock size={10} className="text-kick-green" />
+                            <span>{uptime}</span>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Branding Watermark (Moved to Bottom Right lightly) */}
+            <div className="absolute bottom-16 right-4 z-20 pointer-events-none opacity-20 group-hover:opacity-50 transition-opacity">
+                <span className="text-white/80 font-black italic tracking-tighter text-[10px] drop-shadow-md">
                     MULTIKICK<span className="text-kick-green">.LAT</span>
                 </span>
             </div>
@@ -243,10 +337,10 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                 {/* Controls Bar */}
                 <div className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 flex items-center justify-between gap-2 transform translate-y-[10px] group-hover:translate-y-0">
 
-                    {/* Left: Channel Info */}
+                    {/* Left: Channel Info (Minimal Now) */}
                     <div className="flex items-center gap-2">
                         <span className={`w-2 h-2 rounded-full ${isOffline ? 'bg-gray-500' : 'bg-kick-green animate-pulse shadow-[0_0_10px_#53fc18]'}`}></span>
-                        <span className="text-white text-xs font-bold uppercase tracking-wider">{channel}</span>
+                        {/* Name moved to top overlay, keeping here just for backup context if overlay hidden */}
                     </div>
 
                     {/* Right: Actions */}
