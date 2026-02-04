@@ -71,11 +71,29 @@ function App() {
     }
   }, [userToken, userData]);
 
+  // Check for pending restore on mount (Independent of Auth)
+  useEffect(() => {
+    const savedState = localStorage.getItem('kick_pre_login_state');
+    if (savedState) {
+      try {
+        const parsed = JSON.parse(savedState);
+        if (parsed && parsed.channels && parsed.channels.length > 0) {
+          setPendingRestore(parsed);
+        }
+      } catch (e) {
+        console.error("Failed to parse saved state", e);
+        localStorage.removeItem('kick_pre_login_state');
+      }
+    }
+  }, []);
+
   // Handle OAuth Callback
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code');
-    if (code && !userToken) {
+
+    // Always process code if present, even if we have a token (to refresh/verify)
+    if (code) {
       // Clear URL clean
       window.history.replaceState({}, document.title, window.location.pathname);
 
@@ -90,21 +108,8 @@ function App() {
               setUserData(data.user);
             }
 
-            // Check for previous session to restore
-            const savedState = localStorage.getItem('kick_pre_login_state');
-            if (savedState) {
-              try {
-                const parsed = JSON.parse(savedState);
-                if (parsed.channels && parsed.channels.length > 0) {
-                  setPendingRestore(parsed); // Trigger Modal
-                }
-              } catch (e) {
-                console.error("Failed to restore state", e);
-              }
-              localStorage.removeItem('kick_pre_login_state');
-            } else {
-              // No state? Just show success toast or nothing
-            }
+            // Success Toast could go here
+            console.log("Login Successful");
           }
         })
         .catch(err => {
@@ -112,7 +117,7 @@ function App() {
           setAuthError("Login failed: " + err.message);
         });
     }
-  }, [userToken]);
+  }, []);
 
   const handleLoginClick = () => {
     // Save current state before redirects
@@ -528,7 +533,10 @@ function App() {
                 Volver a ver streams ({pendingRestore.channels.join(', ')})
               </button>
               <button
-                onClick={() => setPendingRestore(null)}
+                onClick={() => {
+                  setPendingRestore(null);
+                  localStorage.removeItem('kick_pre_login_state');
+                }}
                 className="w-full bg-white/5 text-gray-400 font-bold py-3 rounded-xl hover:bg-white/10 hover:text-white transition-colors"
               >
                 Empezar de cero
