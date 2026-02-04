@@ -292,24 +292,12 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                         <User size={10} className="text-kick-green" />
                         <span className="uppercase tracking-wide">{channel}</span>
                     </div>
-                    {streamStats?.viewers !== undefined && (
-                        <div className="bg-black/80 backdrop-blur-md text-white/90 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1.5 shadow-md border border-white/5">
-                            <Users size={10} className="text-kick-green" />
-                            <span>{formatViewers(streamStats.viewers)}</span>
-                        </div>
-                    )}
                 </div>
                 <div className="flex items-center gap-2">
                     {streamStats?.category && (
                         <div className="bg-black/80 backdrop-blur-md text-white/90 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1.5 shadow-md border border-white/5">
                             <Gamepad2 size={10} className="text-kick-green" />
                             <span className="truncate max-w-[100px]">{streamStats.category}</span>
-                        </div>
-                    )}
-                    {!isOffline && streamStats?.startTime && (
-                        <div className="bg-black/80 backdrop-blur-md text-white/90 text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1.5 shadow-md border border-white/5 font-mono">
-                            <Clock size={10} className="text-kick-green" />
-                            <span>{uptime}</span>
                         </div>
                     )}
                 </div>
@@ -380,8 +368,24 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                 )}
 
                 <div className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 flex items-center justify-between gap-2 transform translate-y-[10px] group-hover:translate-y-0">
-                    <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full ${isOffline ? 'bg-gray-500' : 'bg-kick-green animate-pulse shadow-[0_0_10px_#53fc18]'}`}></span>
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1.5">
+                            <span className={`w-2 h-2 rounded-full ${isOffline ? 'bg-gray-500' : 'bg-kick-green animate-pulse shadow-[0_0_10px_#53fc18]'}`}></span>
+                        </div>
+
+                        {!isOffline && streamStats?.viewers !== undefined && (
+                            <div className="flex items-center gap-1 text-white/90 text-[10px] font-bold">
+                                <Users size={12} className="text-kick-green" />
+                                <span>{formatViewers(streamStats.viewers)}</span>
+                            </div>
+                        )}
+
+                        {!isOffline && streamStats?.isLive && (
+                            <div className="flex items-center gap-1 text-white/90 text-[10px] font-bold font-mono">
+                                <Clock size={12} className="text-kick-green" />
+                                <span>{uptime}</span>
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex items-center gap-1.5">
