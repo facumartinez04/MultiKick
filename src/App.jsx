@@ -3,6 +3,7 @@ import { Plus, MonitorPlay, MessageSquare, ArrowLeft, X, Play, VolumeX, LogOut, 
 import KickPlayer from './components/KickPlayer';
 import KickChat from './components/KickChat';
 import ChatInput from './components/ChatInput';
+import AdminStats from './components/AdminStats';
 import { initiateLogin, handleCallback, fetchCurrentUser } from './utils/kickAuth';
 
 function App() {
@@ -273,6 +274,7 @@ function App() {
     // INDEX / SETUP VIEW
     return (
       <div className="min-h-screen w-full bg-kick-dark flex flex-col items-center justify-center text-white relative overflow-hidden font-sans">
+        <AdminStats />
 
         {/* Background Decorative Elements */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
@@ -371,11 +373,12 @@ function App() {
 
   // STREAM VIEW
   return (
-    <div className="flex h-screen w-full bg-kick-dark text-white overflow-hidden">
+    <div className="flex h-screen w-full bg-kick-dark text-white overflow-hidden relative">
+      <AdminStats />
 
       {/* Main Content (Streams) */}
       <div className="flex-1 flex flex-col h-full min-w-0 transition-all duration-300">
-        {/* Minimal Header */}
+        {/* ... (existing header) ... */}
         <header className="relative h-14 bg-kick-gray border-b border-white/5 flex items-center justify-between px-4 shrink-0 z-20">
           <div className="flex items-center gap-4">
             <button
