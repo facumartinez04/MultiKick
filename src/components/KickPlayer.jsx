@@ -401,16 +401,16 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                 )}
 
                 {isMuted && !isOffline && (
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 block">
+                    <div className="absolute top-4 right-4 z-40 block">
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
                                 setIsMuted(false);
                             }}
-                            className="bg-black/50 backdrop-blur-sm border border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white p-3 rounded-full flex items-center justify-center transition-all shadow-xl animate-in zoom-in-95 hover:scale-110"
+                            className="bg-black/50 backdrop-blur-sm border border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white p-2 rounded-full flex items-center justify-center transition-all shadow-xl animate-in zoom-in-95 hover:scale-110"
                             title="Click para activar sonido"
                         >
-                            <VolumeX size={32} strokeWidth={1.5} />
+                            <VolumeX size={20} strokeWidth={1.5} />
                         </button>
                     </div>
                 )}

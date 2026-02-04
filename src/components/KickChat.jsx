@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Pusher from 'pusher-js';
 import { getChannelInfo, get7TVEmotes, get7TVGlobalEmotes } from '../utils/kickApi';
+import { ShieldCheck, Gem, Star, Crown } from 'lucide-react';
 
 const KICK_PUSHER_KEY = '32cbd69e4b950bf97679';
 const KICK_PUSHER_CLUSTER = 'us2';
@@ -199,6 +200,51 @@ const KickChat = ({ channel, active }) => {
         return { label: 'Desconectado', color: 'text-gray-500', dot: 'bg-gray-500' };
     };
 
+    // Render Badges
+    const renderBadges = (badges) => {
+        if (!badges || !Array.isArray(badges)) return null;
+
+        return badges.map((badge, i) => {
+            const type = (badge.type || badge.name || '').toLowerCase();
+
+            switch (type) {
+                case 'broadcaster':
+                    return (
+                        <span key={i} title="Broadcaster" className="mr-1">
+                            <Crown size={14} className="text-yellow-500 fill-yellow-500/20" />
+                        </span>
+                    );
+                case 'moderator':
+                    return (
+                        <span key={i} title="Moderator" className="mr-1">
+                            <ShieldCheck size={14} className="text-kick-green fill-kick-green/20" />
+                        </span>
+                    );
+                case 'vip':
+                    return (
+                        <span key={i} title="VIP" className="mr-1">
+                            <Gem size={14} className="text-pink-500 fill-pink-500/20" />
+                        </span>
+                    );
+                case 'subscriber':
+                case 'founder': // OG Subs often called founder
+                    return (
+                        <span key={i} title="Subscriber" className="mr-1">
+                            <Star size={14} className="text-kick-green" />
+                        </span>
+                    );
+                case 'og':
+                    return (
+                        <span key={i} title="OG" className="mr-1 inline-flex items-center justify-center bg-zinc-700 text-white rounded text-[8px] font-bold px-1 h-3.5">
+                            OG
+                        </span>
+                    );
+                default:
+                    return null;
+            }
+        });
+    };
+
     const statusInfo = getStatusInfo();
 
     if (!active) return null;
@@ -230,13 +276,19 @@ const KickChat = ({ channel, active }) => {
 
                     return (
                         <div key={msg.id || i} className="group break-words leading-relaxed animate-in fade-in slide-in-from-left-2 duration-200">
-                            <span
-                                className="font-bold mr-2 hover:underline cursor-pointer"
-                                style={{ color: color }}
-                            >
-                                {sender.username}
-                            </span>
-                            <span className="text-gray-300">
+                            <div className="flex items-start">
+                                <div className="flex items-center mr-2 shrink-0 select-none">
+                                    {renderBadges(identity.badges)}
+                                    <span
+                                        className="font-bold hover:underline cursor-pointer"
+                                        style={{ color: color }}
+                                    >
+                                        {sender.username}
+                                    </span>
+                                    <span className="text-gray-400 mx-1">:</span>
+                                </div>
+                            </div>
+                            <span className="text-gray-300 break-all">
                                 {renderContent(msg.content)}
                             </span>
                         </div>
