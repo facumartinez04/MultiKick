@@ -6,6 +6,7 @@ import Hls from 'hls.js';
 const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMaximize }) => {
     const [key, setKey] = useState(0);
     const [isMuted, setIsMuted] = useState(true);
+    const [volume, setVolume] = useState(0.7);
     const [streamUrl, setStreamUrl] = useState(null);
     const [useCustomPlayer, setUseCustomPlayer] = useState(true);
     const [isOffline, setIsOffline] = useState(false);
@@ -216,9 +217,9 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
     useEffect(() => {
         if (videoRef.current) {
             videoRef.current.muted = isMuted;
-            videoRef.current.volume = isMuted ? 0 : 1;
+            videoRef.current.volume = isMuted ? 0 : volume;
         }
-    }, [isMuted]);
+    }, [isMuted, volume]);
 
     // Helpers
     const changeQuality = (levelId) => {
@@ -381,12 +382,34 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                             </button>
                         )}
 
-                        <button
-                            onClick={toggleMute}
-                            className="p-1.5 rounded-md hover:bg-white/10 text-white transition-colors"
-                        >
-                            {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-                        </button>
+                        <div className="relative group/volume flex items-center">
+                            <button
+                                onClick={toggleMute}
+                                className="p-1.5 rounded-md hover:bg-white/10 text-white transition-colors"
+                            >
+                                {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                            </button>
+
+                            {/* Volume Slider - Vertical Popover */}
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 p-3 bg-black/90 backdrop-blur-md rounded-xl border border-white/10 opacity-0 group-hover/volume:opacity-100 transition-all duration-200 pointer-events-none group-hover/volume:pointer-events-auto flex flex-col items-center gap-2 h-32 shadow-2xl scale-95 group-hover/volume:scale-100 origin-bottom">
+                                <input
+                                    type="range"
+                                    min="0"
+                                    max="1"
+                                    step="0.05"
+                                    value={isMuted ? 0 : volume}
+                                    onChange={(e) => {
+                                        const newVal = parseFloat(e.target.value);
+                                        setVolume(newVal);
+                                        if (newVal > 0) setIsMuted(false);
+                                        else setIsMuted(true);
+                                    }}
+                                    className="h-20 accent-kick-green cursor-pointer appearance-none bg-white/10 rounded-lg w-1.5"
+                                    style={{ WebkitAppearance: 'slider-vertical' }}
+                                />
+                                <span className="text-[10px] text-white font-black">{Math.round((isMuted ? 0 : volume) * 100)}%</span>
+                            </div>
+                        </div>
 
                         <button
                             onClick={reload}
