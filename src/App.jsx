@@ -440,7 +440,7 @@ function App() {
           <div className="flex items-center gap-2 justify-self-end shrink-0">
             <button
               onClick={handleReset}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold bg-white/5 text-red-400 hover:bg-red-500/20 hover:text-red-300 border border-transparent transition-all mr-2"
+              className="cursor-pointer flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold bg-white/5 text-red-400 hover:bg-red-500/20 hover:text-red-300 border border-transparent transition-all mr-2"
               title="Cerrar canales y Salir"
             >
               <LogOut size={16} />
@@ -449,7 +449,7 @@ function App() {
 
             <button
               onClick={triggerMuteAll}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold bg-white/5 text-gray-200 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/50 border border-transparent transition-all"
+              className="cursor-pointer flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold bg-white/5 text-gray-200 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/50 border border-transparent transition-all"
             >
               <VolumeX size={16} />
               <span className="hidden sm:inline">Mutear Todos</span>
@@ -457,7 +457,7 @@ function App() {
 
             <button
               onClick={() => setIsChatOpen(!isChatOpen)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${isChatOpen
+              className={`cursor-pointer flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold transition-all ${isChatOpen
                 ? 'bg-kick-green text-black'
                 : 'bg-white/5 text-gray-400 hover:bg-white/10'
                 }`}
@@ -515,7 +515,7 @@ function App() {
           <div className="relative w-full">
             <button
               onClick={() => setIsChatOpen(prev => prev === 'dropdown' ? true : 'dropdown')}
-              className="w-full flex items-center justify-between bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-3 py-2 transition-all group"
+              className="cursor-pointer w-full flex items-center justify-between bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-3 py-2 transition-all group"
             >
               <div className="flex items-center gap-3 overflow-hidden">
                 {/* Avatar */}
@@ -548,7 +548,7 @@ function App() {
                       setActiveChat(c);
                       setIsChatOpen(true); // Close dropdown (return to 'true' state means open sidebar)
                     }}
-                    className={`flex items-center gap-3 px-3 py-3 text-sm transition-colors hover:bg-white/5 ${activeChat === c ? 'bg-white/10 text-white' : 'text-gray-400'}`}
+                    className={`cursor-pointer flex items-center gap-3 px-3 py-3 text-sm transition-colors hover:bg-white/5 ${activeChat === c ? 'bg-white/10 text-white' : 'text-gray-400'}`}
                   >
                     {channelAvatars[c] ? (
                       <img src={channelAvatars[c]} alt={c} className={`w-6 h-6 rounded-full object-cover border border-white/10 ${activeChat === c ? 'ring-2 ring-kick-green' : ''}`} />
