@@ -68,7 +68,7 @@ export const initiateLogin = async () => {
 
 export const handleCallback = async (code) => {
     const clientId = import.meta.env.VITE_KICK_CLIENT_ID;
-    const clientSecret = import.meta.env.VITE_KICK_CLIENT_SECRET; // Only usage if flow requires it, with PKCE usually not needed but Kick might require it if Client Type is Confidential.
+    const clientSecret = import.meta.env.VITE_KICK_CLIENT_SECRET;
     const redirectUri = import.meta.env.VITE_KICK_REDIRECT_URI;
     const codeVerifier = localStorage.getItem('kick_code_verifier');
 
@@ -84,8 +84,6 @@ export const handleCallback = async (code) => {
     params.append('code', code);
     params.append('code_verifier', codeVerifier);
 
-    // Some implementations require secret even with PKCE if client is "confidential"
-    // Some implementations require secret even with PKCE if client is "confidential"
     if (clientSecret) {
         params.append('client_secret', clientSecret);
     }
@@ -128,12 +126,44 @@ export const fetchCurrentUser = async (token) => {
     }
 
     const json = await response.json();
-    // The endpoint returns { data: [ { ...user } ] } if no ID provided (self)
-    // Or sometimes just { ...user } depending on API version details in docs vs reality.
-    // The screenshot shows "data": [ { ... } ].
 
     if (json.data && Array.isArray(json.data) && json.data.length > 0) {
         return json.data[0];
     }
     return json;
+};
+
+export const refreshAccessToken = async (refreshToken) => {
+    const clientId = import.meta.env.VITE_KICK_CLIENT_ID;
+    const clientSecret = import.meta.env.VITE_KICK_CLIENT_SECRET;
+
+    const params = new URLSearchParams();
+    params.append('grant_type', 'refresh_token');
+    params.append('refresh_token', refreshToken);
+    params.append('client_id', clientId);
+
+    if (clientSecret) {
+        params.append('client_secret', clientSecret);
+    }
+
+    try {
+        const response = await fetch('https://id.kick.com/oauth/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: params
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Token refresh failed: ${errorText}`);
+        }
+
+        const data = await response.json();
+        return data; // Returns { access_token, refresh_token, expires_in, etc }
+    } catch (e) {
+        console.error("Failed to refresh token", e);
+        throw e;
+    }
 };

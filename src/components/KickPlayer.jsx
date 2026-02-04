@@ -3,7 +3,7 @@ import { X, RefreshCw, Volume2, VolumeX, Maximize2, Minimize2, Maximize, Minimiz
 import { getChannelInfo } from '../utils/kickApi';
 import Hls from 'hls.js';
 
-const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMaximize }) => {
+const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMaximize, onMetaUpdate }) => {
     const [key, setKey] = useState(0);
     const [isMuted, setIsMuted] = useState(true);
     const [volume, setVolume] = useState(0.7);
@@ -27,6 +27,26 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
     const uptimeIntervalRef = useRef(null);
 
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [showMobileControls, setShowMobileControls] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+
+    // Mobile Detection
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.matchMedia("(max-width: 768px)").matches);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    const handleContainerClick = () => {
+        if (!isMobile) return;
+        if (!isMaximized) {
+            onToggleMaximize();
+            setShowMobileControls(true);
+        } else {
+            setShowMobileControls(prev => !prev);
+        }
+    };
 
     // Sync Fullscreen State
     useEffect(() => {
@@ -72,8 +92,17 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                                 viewers: data.livestream.viewer_count || 0,
                                 category: data.livestream.categories?.[0]?.name || 'Just Chatting',
                                 startTime: startTime,
-                                isLive: data.livestream.is_live
+                                isLive: data.livestream.is_live,
+                                profilePic: data?.user?.profile_pic // Capture profile pic
                             });
+                        } else if (data?.user?.profile_pic) {
+                            // even if offline, get pic
+                            setStreamStats(prev => ({ ...prev, profilePic: data.user.profile_pic }));
+                        }
+
+                        // Callback to parent to update avatar cache
+                        if (data?.user?.profile_pic && onMetaUpdate) {
+                            onMetaUpdate(channel, data.user.profile_pic);
                         }
                     } else {
                         console.warn(`[${channel}] No playback_url. Retrying in 5s...`);
@@ -278,12 +307,26 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
     return (
         <div
             ref={playerRef}
-            onDoubleClick={onToggleMaximize}
+            onClick={handleContainerClick}
+            onDoubleClick={!isMobile ? onToggleMaximize : undefined}
             className="relative w-full h-full bg-black border border-white/5 rounded-xl overflow-hidden flex flex-col group shadow-2xl ring-1 ring-white/5 hover:ring-kick-green/30 transition-all duration-300 pointer-events-auto"
         >
 
+            {/* --- MOBILE BACK BUTTON --- */}
+            {isMobile && isMaximized && showMobileControls && (
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onToggleMaximize(); }}
+                        className="bg-black/80 backdrop-blur-md border border-white/20 text-white px-4 py-2 rounded-full flex items-center gap-2 shadow-xl active:scale-95 transition-transform"
+                    >
+                        <X size={14} />
+                        <span className="text-xs font-bold">Volver a pantallas</span>
+                    </button>
+                </div>
+            )}
+
             {/* --- OVERLAY STATS (Top Left) --- */}
-            <div className="absolute top-4 left-4 z-30 flex flex-col gap-2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className={`absolute top-4 left-4 z-30 flex flex-col gap-2 pointer-events-none transition-opacity duration-300 ${isMobile ? (showMobileControls ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover:opacity-100'}`}>
                 <div className="flex items-center gap-2">
                     {!isOffline && streamStats?.isLive && (
                         <div className="bg-red-600 text-white text-[10px] font-black px-1.5 py-0.5 rounded flex items-center gap-1 shadow-md">
@@ -313,11 +356,13 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
 
             <div className="flex-grow relative bg-zinc-900">
                 {isOffline ? (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900/95 z-10 p-4 text-center">
-                        <div className="w-16 h-16 mb-4 rounded-full bg-white/5 flex items-center justify-center animate-pulse">
-                            <VideoOff size={32} className="text-gray-500" />
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900/95 z-10 p-2 text-center">
+                        <div className="w-10 h-10 md:w-16 md:h-16 mb-2 rounded-full bg-white/5 flex items-center justify-center animate-pulse">
+                            <VideoOff size={20} className="text-gray-500 md:w-8 md:h-8" />
                         </div>
-                        <p className="font-bold text-lg text-gray-400">{channel} está Desconectado</p>
+                        <p className="font-bold text-xs md:text-lg text-gray-400 break-words w-full px-2 leading-tight">
+                            {channel} <span className="block md:inline font-normal opacity-70">Desconectado</span>
+                        </p>
                     </div>
                 ) : useCustomPlayer && streamUrl ? (
                     <video
@@ -334,16 +379,16 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                 )}
 
                 {isMuted && !isOffline && (
-                    <div className="absolute top-3 right-12 z-40">
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 block">
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
                                 setIsMuted(false);
                             }}
-                            className="bg-black/80 backdrop-blur-md border border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white text-[10px] font-black px-3 py-1 rounded flex items-center gap-2 transition-all shadow-xl animate-in zoom-in-95"
+                            className="bg-black/50 backdrop-blur-sm border border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white p-3 rounded-full flex items-center justify-center transition-all shadow-xl animate-in zoom-in-95 hover:scale-110"
+                            title="Click para activar sonido"
                         >
-                            <VolumeX size={12} />
-                            <span className="tracking-widest uppercase">MUTEADO - CLICK PARA ESCUCHAR</span>
+                            <VolumeX size={32} strokeWidth={1.5} />
                         </button>
                     </div>
                 )}
@@ -368,44 +413,37 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                     </div>
                 )}
 
-                <div className="absolute bottom-0 inset-x-0 p-3 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 flex items-center justify-between gap-2 transform translate-y-[10px] group-hover:translate-y-0">
-                    <div className="flex items-center gap-3">
+                <div className={`absolute bottom-0 inset-x-0 p-2 md:p-3 bg-gradient-to-t from-black/90 via-black/50 to-transparent transition-all duration-300 z-20 flex items-center justify-between gap-2 transform ${isMobile ? (showMobileControls ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-[10px]') : 'opacity-0 group-hover:opacity-100 translate-y-[10px] group-hover:translate-y-0'}`}>
+                    <div className="flex items-center gap-2 md:gap-3">
                         <div className="flex items-center gap-1.5">
-                            <span className={`w-2 h-2 rounded-full ${isOffline ? 'bg-gray-500' : 'bg-kick-green animate-pulse shadow-[0_0_10px_#53fc18]'}`}></span>
+                            <span className={`w-1.5 h-1.5 md:w-2 md:h-2 rounded-full ${isOffline ? 'bg-gray-500' : 'bg-kick-green animate-pulse shadow-[0_0_10px_#53fc18]'}`}></span>
                         </div>
 
                         {!isOffline && streamStats?.viewers !== undefined && (
-                            <div className="flex items-center gap-1 text-white/90 text-[10px] font-bold">
-                                <Users size={12} className="text-kick-green" />
+                            <div className="flex items-center gap-1 text-white/90 text-[8px] md:text-[10px] font-bold">
+                                <Users size={10} className="text-kick-green" />
                                 <span>{formatViewers(streamStats.viewers)}</span>
-                            </div>
-                        )}
-
-                        {!isOffline && streamStats?.isLive && (
-                            <div className="flex items-center gap-1 text-white/90 text-[10px] font-bold font-mono">
-                                <Clock size={12} className="text-kick-green" />
-                                <span>{uptime}</span>
                             </div>
                         )}
                     </div>
 
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1 md:gap-1.5">
                         {useCustomPlayer && qualities.length > 0 && !isOffline && (
                             <button
                                 onClick={() => setShowQualityMenu(!showQualityMenu)}
-                                className={`p-1.5 rounded-md hover:bg-white/10 text-white transition-colors ${showQualityMenu ? 'text-kick-green' : ''}`}
+                                className={`p-1 md:p-1.5 rounded-md hover:bg-white/10 text-white transition-colors ${showQualityMenu ? 'text-kick-green' : ''}`}
                                 title="Calidad"
                             >
-                                <Settings size={16} />
+                                <Settings size={14} className="md:w-4 md:h-4" />
                             </button>
                         )}
 
                         <div className="relative group/volume flex items-center">
                             <button
                                 onClick={(e) => { e.stopPropagation(); toggleMute(); }}
-                                className="p-1.5 rounded-md hover:bg-white/10 text-white transition-colors"
+                                className="p-1 md:p-1.5 rounded-md hover:bg-white/10 text-white transition-colors"
                             >
-                                {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                                {isMuted ? <VolumeX size={14} className="md:w-4 md:h-4" /> : <Volume2 size={14} className="md:w-4 md:h-4" />}
                             </button>
 
                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 pb-4 opacity-0 group-hover/volume:opacity-100 transition-all duration-200 pointer-events-none group-hover/volume:pointer-events-auto z-50 scale-95 group-hover/volume:scale-100 origin-bottom">
@@ -432,37 +470,26 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
 
                         <button
                             onClick={(e) => { e.stopPropagation(); reload(); }}
-                            className="p-1.5 rounded-md hover:bg-white/10 text-white transition-colors"
+                            className="p-1 md:p-1.5 rounded-md hover:bg-white/10 text-white transition-colors"
                             title="Recargar Stream"
                         >
-                            <RefreshCw size={16} />
+                            <RefreshCw size={14} className="md:w-4 md:h-4" />
                         </button>
 
                         <button
                             onClick={(e) => { e.stopPropagation(); onToggleMaximize(); }}
-                            className="p-1.5 rounded-md hover:bg-white/10 text-white transition-colors"
+                            className="p-1 md:p-1.5 rounded-md hover:bg-white/10 text-white transition-colors"
                             title={isMaximized ? "Achicar" : "Maximizar en App"}
                         >
-                            {isMaximized ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-                        </button>
-                        {/* Native Fullscreen */}
-                        <button
-                            onClick={toggleFullscreen}
-                            className={`flex items-center gap-1.5 px-2 py-1 rounded bg-white/10 hover:bg-kick-green hover:text-black transition-all group/fs ${isFullscreen ? 'text-kick-green' : 'text-white'}`}
-                            title={isFullscreen ? "Salir" : "Pantalla Completa"}
-                        >
-                            {isFullscreen ? <Minimize size={14} /> : <Maximize size={14} />}
-                            <span className="text-[10px] font-black tracking-tighter uppercase">
-                                {isFullscreen ? "SALIR" : "PANTALLA COMPLETA"}
-                            </span>
+                            {isMaximized ? <Minimize2 size={14} className="md:w-4 md:h-4" /> : <Maximize size={14} className="md:w-4 md:h-4" />}
                         </button>
 
                         <button
                             onClick={(e) => { e.stopPropagation(); onRemove(channel); }}
-                            className="p-1.5 rounded-md hover:bg-red-500/20 text-red-400 hover:text-white transition-colors ml-1"
+                            className="p-1 md:p-1.5 rounded-md hover:bg-red-500/20 text-red-400 hover:text-white transition-colors ml-1"
                             title="Remover"
                         >
-                            <X size={16} />
+                            <X size={14} className="md:w-4 md:h-4" />
                         </button>
                     </div>
                 </div>

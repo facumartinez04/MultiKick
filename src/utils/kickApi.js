@@ -3,7 +3,6 @@ export const getChannelInfo = async (channelSlug) => {
         const response = await fetch(`https://kick.com/api/v2/channels/${channelSlug}`);
         if (!response.ok) throw new Error('Failed to fetch channel info');
         const data = await response.json();
-
         return data;
     } catch (error) {
         console.error("DEBUG: Error fetching channel info for", channelSlug, error);

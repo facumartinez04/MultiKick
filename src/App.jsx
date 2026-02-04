@@ -24,6 +24,16 @@ function App() {
   const [maximizedChannel, setMaximizedChannel] = useState(null);
   const [isTopGlobales, setIsTopGlobales] = useState(false);
 
+  // Cache for channel avatars
+  const [channelAvatars, setChannelAvatars] = useState({});
+
+  const handleMetaUpdate = (channel, profilePic) => {
+    setChannelAvatars(prev => {
+      if (prev[channel] === profilePic) return prev;
+      return { ...prev, [channel]: profilePic };
+    });
+  };
+
 
   // ... useEffects ...
   // Load from URL (Path or Query) on mount
@@ -146,6 +156,7 @@ function App() {
   const handleReset = () => {
     // Clear Auth
     localStorage.removeItem('kick_access_token');
+    localStorage.removeItem('kick_refresh_token');
     localStorage.removeItem('kick_user');
     localStorage.removeItem('kick_pre_login_state');
     setUserToken(null);
@@ -157,15 +168,32 @@ function App() {
     setIsStreamActive(false);
     setMaximizedChannel(null);
     updateUrl([]);
+    setIsTopGlobales(false); // Reset this too
   };
 
+  // Specific handler for Logout (keep streams active if desired, but for now full reset is safer or simplified)
   const handleUserLogout = () => {
-    // Only Clear Auth
+    // Just clear auth, keep streams? Or full reset. 
+    // User requested "logout", usually means disconnect account.
     localStorage.removeItem('kick_access_token');
+    localStorage.removeItem('kick_refresh_token');
     localStorage.removeItem('kick_user');
     setUserToken(null);
     setUserData(null);
   };
+
+  const handleTokenUpdate = (newData) => {
+    if (newData.access_token) {
+      localStorage.setItem('kick_access_token', newData.access_token);
+      setUserToken(newData.access_token);
+    }
+    if (newData.refresh_token) {
+      localStorage.setItem('kick_refresh_token', newData.refresh_token);
+    }
+  };
+
+
+
 
   const updateUrl = (newChannels) => {
     const url = new URL(window.location);
@@ -383,8 +411,8 @@ function App() {
       {/* Main Content (Streams) */}
       <div className="flex-1 flex flex-col h-full min-w-0 transition-all duration-300">
         {/* ... (existing header) ... */}
-        <header className="relative h-14 bg-kick-gray border-b border-white/5 flex items-center justify-between px-4 shrink-0 z-20">
-          <div className="flex items-center gap-4">
+        <header className="relative h-14 bg-kick-gray border-b border-white/5 grid grid-cols-[1fr_auto_1fr] items-center px-4 shrink-0 z-20">
+          <div className="flex items-center gap-4 justify-self-start min-w-0">
             <button
               onClick={() => setIsStreamActive(false)}
               className="p-2 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
@@ -402,15 +430,17 @@ function App() {
           </div>
 
           {/* Epic Title for Top Globales */}
-          {isTopGlobales && (
-            <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 items-center gap-2 pointer-events-none">
-              <span className="text-xl md:text-2xl font-black italic tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-kick-green via-white to-kick-green animate-pulse drop-shadow-[0_0_15px_rgba(83,252,24,0.4)]">
-                ★ LOS TOP GLOBALES ★
-              </span>
-            </div>
-          )}
+          <div className="justify-self-center flex justify-center min-w-0">
+            {isTopGlobales && (
+              <div className="hidden md:flex items-center gap-2 pointer-events-none z-30 whitespace-nowrap">
+                <span className="text-lg md:text-xl lg:text-2xl font-black italic tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-kick-green via-white to-kick-green animate-pulse drop-shadow-[0_0_15px_rgba(83,252,24,0.4)]">
+                  ★ LOS TOP GLOBALES ★
+                </span>
+              </div>
+            )}
+          </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 justify-self-end shrink-0">
             <button
               onClick={handleReset}
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-bold bg-white/5 text-red-400 hover:bg-red-500/20 hover:text-red-300 border border-transparent transition-all mr-2"
@@ -458,6 +488,7 @@ function App() {
                     setMaximizedChannel(maximizedChannel === channel ? null : channel);
                     setActiveChat(channel);
                   }}
+                  onMetaUpdate={handleMetaUpdate}
                 />
               </div>
             );
@@ -467,21 +498,38 @@ function App() {
 
       {/* Right Sidebar (Chat) */}
       <div
-        className={`flex-shrink-0 bg-kick-gray border-l border-white/5 transition-all duration-300 flex flex-col overflow-hidden ${isChatOpen ? 'w-80 md:w-96 translate-x-0' : 'w-0 translate-x-full opacity-0'
-          }`}
+        className={`flex-shrink-0 bg-kick-gray border-l border-white/5 transition-all duration-300 flex flex-col overflow-hidden 
+        fixed inset-0 z-50 md:relative md:inset-auto md:h-full md:z-0
+        ${isChatOpen ? 'w-full md:w-64 lg:w-96 translate-x-0' : 'w-0 translate-x-full opacity-0 pointer-events-none md:pointer-events-auto'}
+        ${isChatOpen ? 'md:translate-x-0' : ''}
+        `}
       >
         {/* Chat Header / Dropdown */}
-        <div className="h-14 border-b border-white/5 flex items-center px-3 py-2 shrink-0 gap-2 z-50">
+        <div className="h-14 border-b border-white/5 flex items-center px-3 py-2 shrink-0 gap-2 z-50 bg-kick-gray">
+
+          {/* Mobile Back Button */}
+          <button
+            onClick={() => setIsChatOpen(false)}
+            className="md:hidden p-2 text-gray-400 hover:text-white"
+          >
+            <ArrowLeft size={20} />
+          </button>
+
           <div className="relative w-full">
             <button
               onClick={() => setIsChatOpen(prev => prev === 'dropdown' ? true : 'dropdown')}
               className="w-full flex items-center justify-between bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-3 py-2 transition-all group"
             >
               <div className="flex items-center gap-3 overflow-hidden">
-                {/* Avatar Placeholder / or actual if we had it. Using UI Avatars for consistent "Icono" feel */}
-                <div className="w-6 h-6 rounded-full bg-kick-green flex items-center justify-center shrink-0 text-black text-[10px] font-bold uppercase">
-                  {activeChat ? activeChat.substring(0, 2) : '??'}
-                </div>
+                {/* Avatar */}
+                {activeChat && channelAvatars[activeChat] ? (
+                  <img src={channelAvatars[activeChat]} alt={activeChat || '??'} className="w-6 h-6 rounded-full object-cover border border-white/10" />
+                ) : (
+                  <div className="w-6 h-6 rounded-full bg-kick-green flex items-center justify-center shrink-0 text-black text-[10px] font-bold uppercase">
+                    {activeChat ? activeChat.substring(0, 2) : '??'}
+                  </div>
+                )}
+
                 <span className="font-bold text-sm text-white truncate">
                   {activeChat ? `chat de ${activeChat}` : 'Selecciona un chat'}
                 </span>
@@ -505,9 +553,14 @@ function App() {
                     }}
                     className={`flex items-center gap-3 px-3 py-3 text-sm transition-colors hover:bg-white/5 ${activeChat === c ? 'bg-white/10 text-white' : 'text-gray-400'}`}
                   >
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold uppercase border border-white/10 ${activeChat === c ? 'bg-kick-green text-black' : 'bg-black text-gray-500'}`}>
-                      {c.substring(0, 2)}
-                    </div>
+                    {channelAvatars[c] ? (
+                      <img src={channelAvatars[c]} alt={c} className={`w-6 h-6 rounded-full object-cover border border-white/10 ${activeChat === c ? 'ring-2 ring-kick-green' : ''}`} />
+                    ) : (
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-[10px] font-bold uppercase border border-white/10 ${activeChat === c ? 'bg-kick-green text-black' : 'bg-black text-gray-500'}`}>
+                        {c.substring(0, 2)}
+                      </div>
+                    )}
+
                     <span className={activeChat === c ? 'font-bold' : ''}>
                       chat de {c}
                     </span>
@@ -519,7 +572,8 @@ function App() {
         </div>
 
         {/* Chat Embed */}
-        <div className="flex-1 bg-black flex flex-col min-h-0">
+        <div className="flex-1 bg-black flex flex-col min-h-0 relative">
+          {/* Optional close button overlay if desired, but back button covers it */}
           <div className="relative flex-1 min-h-0 flex flex-col">
             {activeChat ? (
               <KickChat channel={activeChat} active={true} />
@@ -537,6 +591,7 @@ function App() {
             userData={userData}
             onLogout={handleUserLogout}
             onLogin={handleLoginClick}
+            onTokenUpdate={handleTokenUpdate}
           />
         </div>
 

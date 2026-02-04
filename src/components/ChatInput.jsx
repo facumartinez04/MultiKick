@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Send, Loader2, AlertCircle, LogOut, User, Smile, X } from 'lucide-react';
 import { getChannelInfo, sendChatMessage, getKickEmotes, getChannelEmotes, get7TVEmotes, get7TVGlobalEmotes } from '../utils/kickApi';
-import { initiateLogin } from '../utils/kickAuth';
+import { initiateLogin, refreshAccessToken } from '../utils/kickAuth';
 
 const EMOJI_LIST = [
     '😀', '😃', '😄', '😁', '😅', '😂', '🤣', '😊', '😍', '🥰', '😘', '😋', '😛', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓', '🤗', '🤔', '🤭', '🤫', '🤥', '😶', '😐', '😑', '😬', '🙄', '😯', '😦', '😧', '😮', '😲', '🥱', '😴', '🤤', '😪', '😵', '🤐', '🥴', '🤢', '🤮', '🤧', '😷', '🤒', '🤕', '🤑', '🤠', '😈', '👿', '👹', '👺', '🤡', '💩', '👻', '💀', '☠️', '👽', '👾', '🤖',
@@ -10,7 +10,7 @@ const EMOJI_LIST = [
     '🔥', '✨', '🌟', '🌈', '⚡', '☄️', '💧', '🌊', '👑', '💎', '🎨', '🎬', '🎤', '🎧', '🎮', '🕹️', '🚀', '🛸', '🛰️', '💡', '💰', '💸', '🎁', '🎈', '🎉', '🎊', '🎀', '🪄'
 ];
 
-const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin }) => {
+const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onTokenUpdate }) => {
     const [message, setMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [broadcasterId, setBroadcasterId] = useState(null);
@@ -81,21 +81,52 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!message.trim() || !userToken || !broadcasterId) return;
+        const msgToSend = message.trim();
+        if (!msgToSend || !userToken || !broadcasterId) return;
 
         setIsLoading(true);
         setError(null);
-        setShowEmojis(false);
+        setShowEmojis(false); // Close emojis on send 
+
+        const attemptSend = async (tokenToUse) => {
+            await sendChatMessage(tokenToUse, broadcasterId, msgToSend);
+        };
 
         try {
-            await sendChatMessage(userToken, broadcasterId, message.trim());
+            await attemptSend(userToken);
             setMessage('');
         } catch (err) {
             console.error("Chat Error:", err);
             const errMsg = err.message?.toLowerCase() || '';
-            if (errMsg.includes('401') || errMsg.includes('403') || errMsg.includes('unauthorized')) {
-                alert("Tu sesión ha expirado. Por favor, logueate nuevamente.");
-                if (onLogout) onLogout();
+
+            // Check for Auth Error (401)
+            if (errMsg.includes('401') || errMsg.includes('unauthenticated')) {
+                console.log("Token expired (401), attempting refresh...");
+                const refreshTokenStr = localStorage.getItem('kick_refresh_token');
+
+                if (refreshTokenStr) {
+                    try {
+                        const newData = await refreshAccessToken(refreshTokenStr);
+                        console.log("Token refreshed successfully!");
+
+                        // Notify parent
+                        if (onTokenUpdate) {
+                            onTokenUpdate(newData);
+                        }
+
+                        // Retry
+                        await attemptSend(newData.access_token);
+                        setMessage('');
+                        return;
+                    } catch (refreshErr) {
+                        console.error("Refresh failed:", refreshErr);
+                        if (onLogout) onLogout();
+                        alert("Tu sesión ha expirado. Por favor reconecta.");
+                    }
+                } else {
+                    if (onLogout) onLogout();
+                    alert("Tu sesión ha expirado.");
+                }
             } else {
                 setError('Error al enviar.');
             }
