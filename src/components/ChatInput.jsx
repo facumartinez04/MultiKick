@@ -37,9 +37,12 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
             setSeventvEmotes([]);
             setKickChannelEmotes([]);
 
+
             try {
+                const token = localStorage.getItem('kick_access_token');
+
                 // Fetch Kick Channel Emotes
-                const kChanData = await getChannelEmotes(activeChat, userToken);
+                const kChanData = await getChannelEmotes(activeChat, token);
                 if (isMounted) {
                     if (Array.isArray(kChanData)) {
                         // The API returns an array of emote sets.
@@ -62,7 +65,7 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
                     }
                 }
 
-                const info = await getChannelInfo(activeChat, userToken);
+                const info = await getChannelInfo(activeChat, token);
                 if (isMounted && info) {
                     const id = info.user_id || info.userId || info.id;
                     if (id) {
@@ -75,8 +78,8 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
                     }
                 }
 
-                if (userToken) {
-                    const relData = await getChannelUserRelationship(activeChat, userToken);
+                if (token) {
+                    const relData = await getChannelUserRelationship(activeChat, token);
                     if (isMounted && relData) {
                         // Check if subscription exists and is active
                         if (relData.subscription) {
