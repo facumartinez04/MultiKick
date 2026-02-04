@@ -85,6 +85,7 @@ export const handleCallback = async (code) => {
     params.append('code_verifier', codeVerifier);
 
     // Some implementations require secret even with PKCE if client is "confidential"
+    // Some implementations require secret even with PKCE if client is "confidential"
     if (clientSecret) {
         params.append('client_secret', clientSecret);
     }
@@ -102,6 +103,37 @@ export const handleCallback = async (code) => {
         throw new Error(`Token exchange failed: ${errorText}`);
     }
 
-    const data = await response.json();
-    return data; // contains access_token, etc.
+    const tokenData = await response.json();
+
+    // Fetch User Data immediately
+    try {
+        const userData = await fetchCurrentUser(tokenData.access_token);
+        return { ...tokenData, user: userData };
+    } catch (e) {
+        console.error("Failed to fetch user data after login", e);
+        return tokenData;
+    }
+};
+
+export const fetchCurrentUser = async (token) => {
+    const response = await fetch('https://api.kick.com/public/v1/users', {
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json'
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to fetch user');
+    }
+
+    const json = await response.json();
+    // The endpoint returns { data: [ { ...user } ] } if no ID provided (self)
+    // Or sometimes just { ...user } depending on API version details in docs vs reality.
+    // The screenshot shows "data": [ { ... } ].
+
+    if (json.data && Array.isArray(json.data) && json.data.length > 0) {
+        return json.data[0];
+    }
+    return json;
 };

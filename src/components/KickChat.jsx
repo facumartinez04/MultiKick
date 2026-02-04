@@ -3,7 +3,7 @@ import Pusher from 'pusher-js';
 import { getChannelInfo } from '../utils/kickApi';
 import { MessageSquare, Users } from 'lucide-react';
 
-const KICK_PUSHER_KEY = 'eb1d5f283081a78b932c';
+const KICK_PUSHER_KEY = '32cbd69e4b950bf97679';
 const KICK_PUSHER_CLUSTER = 'us2';
 
 const KickChat = ({ channel, active }) => {
@@ -47,35 +47,69 @@ const KickChat = ({ channel, active }) => {
             pusherRef.current.disconnect();
         }
 
+        console.log(`[KickChat] Initializing Pusher for Chatroom: ${chatroomId}`);
+
         const pusher = new Pusher(KICK_PUSHER_KEY, {
             cluster: KICK_PUSHER_CLUSTER,
             encrypted: true,
+            forceTLS: true,
+            disableStats: true,
+            enabledTransports: ['ws', 'wss'] // Force WS to avoid HTTP fallbacks that might lag
         });
 
         pusherRef.current = pusher;
 
+        // Debug Connection States
+        pusher.connection.bind('state_change', (states) => {
+            console.log(`[KickChat] Connection state: ${states.current}`);
+            setConnectionStatus(`State: ${states.current}`);
+        });
+
+        pusher.connection.bind('connected', () => {
+            console.log('[KickChat] Connected to Pusher Server.');
+        });
+
+        pusher.connection.bind('error', (err) => {
+            console.error('[KickChat] Connection Error:', err);
+            setConnectionStatus('Connection Error');
+        });
+
+        // Channel Subscription
         const channelName = `chatrooms.${chatroomId}.v2`;
+        console.log(`[KickChat] Subscribing to ${channelName}`);
+
         const channelSub = pusher.subscribe(channelName);
         channelRef.current = channelSub;
 
-        console.log(`[KickChat] Subscribing to ${channelName}`);
-
         channelSub.bind('pusher:subscription_succeeded', () => {
-            setConnectionStatus('Connected');
-            console.log("[KickChat] Subscription Succeeded");
+            setConnectionStatus('Online & Listening');
+            console.log("[KickChat] Subscription Succeeded!");
         });
 
+        channelSub.bind('pusher:subscription_error', (status) => {
+            setConnectionStatus('Auth/Sub Error');
+            console.error("[KickChat] Subscription Error:", status);
+        });
+
+        // Listen for messages
         channelSub.bind('App\\Events\\ChatMessageEvent', (data) => {
-            // console.log("New Message:", data);
+            // console.log("Raw Message:", data);
+            // Ensure data is parsed if string
+            let parsed = data;
+            if (typeof data === 'string') {
+                try { parsed = JSON.parse(data); } catch (e) { }
+            }
+
             setMessages(prev => {
-                const newMsgs = [...prev, data];
-                if (newMsgs.length > 100) return newMsgs.slice(-100); // Keep last 100
+                const newMsgs = [...prev, parsed];
+                if (newMsgs.length > 100) return newMsgs.slice(-100);
                 return newMsgs;
             });
         });
 
         return () => {
             if (pusherRef.current) {
+                console.log('[KickChat] Disconnecting...');
                 pusherRef.current.unsubscribe(channelName);
                 pusherRef.current.disconnect();
             }
@@ -89,12 +123,45 @@ const KickChat = ({ channel, active }) => {
         }
     }, [messages]);
 
-    // Render Message Content (text + potentially emotes later)
+    // Render Message Content (text + emotes)
     const renderContent = (content) => {
-        // Simplistic text render for now. Kick sends raw structure sometimes or just string?
-        // Usually it's a string, or structure. Let's inspect `data`. 
-        // Kick V2 `ChatMessageEvent` normally has `message` and `sender` etc.
-        return content;
+        if (!content) return null;
+
+        // Regex for Kick Emotes: [emote:37230:POLICE]
+        const emoteRegex = /\[emote:(\d+):([\w]+)\]/g;
+
+        const parts = [];
+        let lastIndex = 0;
+        let match;
+
+        while ((match = emoteRegex.exec(content)) !== null) {
+            // Push text before the emote
+            if (match.index > lastIndex) {
+                parts.push(content.substring(lastIndex, match.index));
+            }
+
+            // Push the emote image
+            const emoteId = match[1];
+            const emoteName = match[2];
+            parts.push(
+                <img
+                    key={`${emoteId}-${match.index}`}
+                    src={`https://files.kick.com/emotes/${emoteId}/fullsize`}
+                    alt={emoteName}
+                    title={emoteName}
+                    className="inline-block h-6 align-middle mx-0.5"
+                />
+            );
+
+            lastIndex = emoteRegex.lastIndex;
+        }
+
+        // Push remaining text
+        if (lastIndex < content.length) {
+            parts.push(content.substring(lastIndex));
+        }
+
+        return parts.length > 0 ? parts : content;
     };
 
     if (!active) return null;
@@ -130,7 +197,7 @@ const KickChat = ({ channel, active }) => {
                                 {sender.username}
                             </span>
                             <span className="text-gray-300">
-                                {msg.content}
+                                {renderContent(msg.content)}
                             </span>
                         </div>
                     );

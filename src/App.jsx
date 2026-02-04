@@ -13,6 +13,12 @@ function App() {
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [shouldMuteAll, setShouldMuteAll] = useState(0);
   const [userToken, setUserToken] = useState(localStorage.getItem('kick_access_token'));
+  const [userData, setUserData] = useState(() => {
+    try {
+      const stored = localStorage.getItem('kick_user');
+      return stored ? JSON.parse(stored) : null;
+    } catch (e) { return null; }
+  });
   const [authError, setAuthError] = useState(null);
   const [maximizedChannel, setMaximizedChannel] = useState(null);
 
@@ -53,6 +59,11 @@ function App() {
             localStorage.setItem('kick_access_token', data.access_token);
             setUserToken(data.access_token);
 
+            if (data.user) {
+              localStorage.setItem('kick_user', JSON.stringify(data.user));
+              setUserData(data.user);
+            }
+
             // Restore State if exists
             const savedState = localStorage.getItem('kick_pre_login_state');
             if (savedState) {
@@ -70,7 +81,7 @@ function App() {
               localStorage.removeItem('kick_pre_login_state');
             }
 
-            alert("Logged in successfully!");
+            alert(`Logged in as ${data.user?.username || 'User'}!`);
           }
         })
         .catch(err => {
@@ -94,8 +105,10 @@ function App() {
   const handleReset = () => {
     // Clear Auth
     localStorage.removeItem('kick_access_token');
+    localStorage.removeItem('kick_user');
     localStorage.removeItem('kick_pre_login_state');
     setUserToken(null);
+    setUserData(null);
 
     // Clear App State
     setChannels([]);
@@ -415,7 +428,7 @@ function App() {
           </div>
 
           {/* Custom API Chat Input */}
-          <ChatInput activeChat={activeChat} userToken={userToken} />
+          <ChatInput activeChat={activeChat} userToken={userToken} userData={userData} />
         </div>
 
       </div>

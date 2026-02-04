@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Send, Loader2, AlertCircle } from 'lucide-react';
 import { getChannelInfo, sendChatMessage } from '../utils/kickApi';
+import { initiateLogin } from '../utils/kickAuth';
 
 const ChatInput = ({ activeChat, userToken }) => {
     const [message, setMessage] = useState('');
@@ -53,7 +54,25 @@ const ChatInput = ({ activeChat, userToken }) => {
         }
     };
 
+    const handleLogin = () => {
+        initiateLogin();
+    };
+
     if (!activeChat) return null;
+
+    if (!userToken) {
+        return (
+            <div className="p-4 bg-kick-surface border-t border-white/10 flex flex-col items-center gap-2">
+                <p className="text-xs text-gray-400">Inicia sesión para chatear</p>
+                <button
+                    onClick={handleLogin}
+                    className="w-full bg-kick-green text-black font-bold py-2 rounded-lg hover:bg-kick-green/90 transition-colors text-sm"
+                >
+                    Conectar con Kick
+                </button>
+            </div>
+        );
+    }
 
     return (
         <div className="p-3 bg-kick-surface border-t border-white/10">
@@ -77,23 +96,18 @@ const ChatInput = ({ activeChat, userToken }) => {
                     type="text"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    placeholder={userToken ? `Enviar mensaje a ${activeChat}...` : "Conecta tu cuenta para escribir"}
-                    disabled={!userToken || isLoading || !broadcasterId}
+                    placeholder={`Enviar mensaje a ${activeChat}...`}
+                    disabled={isLoading || !broadcasterId}
                     className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-kick-green focus:ring-1 focus:ring-kick-green disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <button
                     type="submit"
-                    disabled={!userToken || isLoading || !message.trim() || !broadcasterId}
+                    disabled={isLoading || !message.trim() || !broadcasterId}
                     className="bg-kick-green text-black p-2 rounded-lg hover:bg-kick-green/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                     {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                 </button>
             </form>
-            {!userToken && (
-                <div className="text-[10px] text-gray-500 mt-1 text-center">
-                    El chat es de solo lectura hasta que te autentiques.
-                </div>
-            )}
         </div>
     );
 };
