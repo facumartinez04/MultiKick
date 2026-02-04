@@ -196,14 +196,27 @@ const KickChat = ({ channel, active }) => {
         return parts.length > 0 ? parts : content;
     };
 
+    // Map status for display and color
+    const getStatusInfo = () => {
+        const s = connectionStatus.toLowerCase();
+        if (s.includes('online') || s.includes('connected')) return { label: 'Conectado', color: 'text-kick-green', dot: 'bg-kick-green' };
+        if (s.includes('error')) return { label: connectionStatus.includes('Chatroom') ? 'Error: Sin Chat' : 'Error de Conexión', color: 'text-red-500', dot: 'bg-red-500' };
+        if (s.includes('fetching') || s.includes('connecting') || s.includes('state')) return { label: 'Conectando...', color: 'text-yellow-500', dot: 'bg-yellow-500 animate-pulse' };
+        return { label: 'Desconectado', color: 'text-gray-500', dot: 'bg-gray-500' };
+    };
+
+    const statusInfo = getStatusInfo();
+
     if (!active) return null;
 
     return (
         <div className="flex-1 bg-black flex flex-col h-full overflow-hidden font-sans text-sm relative">
             {/* Status Bar */}
-            <div className="bg-white/5 px-3 py-1 text-[10px] text-gray-500 flex justify-between uppercase tracking-wider shrink-0">
-                <span>{connectionStatus}</span>
-                <span>{chatroomId ? `RID: ${chatroomId}` : ''}</span>
+            <div className="bg-white/5 px-3 py-1.5 text-[10px] flex justify-between uppercase tracking-wider shrink-0 border-b border-white/5">
+                <div className="flex items-center gap-2">
+                    <span className={`w-1.5 h-1.5 rounded-full ${statusInfo.dot}`}></span>
+                    <span className={`font-bold ${statusInfo.color}`}>{statusInfo.label}</span>
+                </div>
             </div>
 
             {/* Messages Area */}

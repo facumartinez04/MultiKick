@@ -447,7 +447,10 @@ function App() {
                   onRemove={removeChannel}
                   shouldMuteAll={shouldMuteAll}
                   isMaximized={maximizedChannel === channel}
-                  onToggleMaximize={() => setMaximizedChannel(maximizedChannel === channel ? null : channel)}
+                  onToggleMaximize={() => {
+                    setMaximizedChannel(maximizedChannel === channel ? null : channel);
+                    setActiveChat(channel);
+                  }}
                 />
               </div>
             );
