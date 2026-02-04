@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, RefreshCw, Volume2, VolumeX, Maximize2, Minimize2, Settings } from 'lucide-react';
 import ReactPlayer from 'react-player';
+import { getChannelInfo } from '../utils/kickApi';
 
 const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMaximize }) => {
     const [key, setKey] = useState(0);
@@ -12,16 +13,18 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
     useEffect(() => {
         let isMounted = true;
         const fetchStream = async () => {
-            // User requested to hit this specific API
+            setUseCustomPlayer(true); // Reset to try custom player first
             try {
-                const response = await fetch(`https://kick.com/api/v2/channels/${channel}`);
-                if (!response.ok) throw new Error('API Fail');
-                const data = await response.json();
+                const data = await getChannelInfo(channel);
 
-                if (isMounted && data.playback_url) {
-                    setStreamUrl(data.playback_url);
-                } else {
-                    setUseCustomPlayer(false);
+                if (isMounted) {
+                    if (data && data.playback_url) {
+                        setStreamUrl(data.playback_url);
+                    } else {
+                        // If no playback_url found (offline or api change), fall back
+                        console.warn(`No playback_url found for ${channel}`);
+                        setUseCustomPlayer(false);
+                    }
                 }
             } catch (err) {
                 console.error("Stream Fetch Error", err);
@@ -60,12 +63,19 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                         url={streamUrl}
                         playing={true}
                         muted={isMuted}
+                        volume={isMuted ? 0 : 0.5}
+                        playsinline={true}
                         width="100%"
                         height="100%"
                         controls={true} // Enable default controls for quality/volume
                         config={{
                             file: {
                                 forceHLS: true,
+                                hlsOptions: {
+                                    autoStartLoad: true,
+                                    startPosition: -1,
+                                    debug: false,
+                                }
                             }
                         }}
                         onError={() => setUseCustomPlayer(false)} // Fallback to iframe
