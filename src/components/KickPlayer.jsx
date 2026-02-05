@@ -11,16 +11,13 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
     const [useCustomPlayer, setUseCustomPlayer] = useState(true);
     const [isOffline, setIsOffline] = useState(false);
 
-    // Stream Stats
     const [streamStats, setStreamStats] = useState(null);
     const [uptime, setUptime] = useState('00:00:00');
 
-    // Quality Control State
     const [qualities, setQualities] = useState([]);
-    const [currentQuality, setCurrentQuality] = useState(-1); // -1 = Auto
+    const [currentQuality, setCurrentQuality] = useState(-1);
     const [showQualityMenu, setShowQualityMenu] = useState(false);
 
-    // Refs
     const playerRef = useRef(null);
     const videoRef = useRef(null);
     const hlsRef = useRef(null);
@@ -31,7 +28,6 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
     const [isMobile, setIsMobile] = useState(false);
     const [isPlaying, setIsPlaying] = useState(true);
 
-    // Mobile Detection
     useEffect(() => {
         const checkMobile = () => setIsMobile(window.matchMedia("(max-width: 768px)").matches);
         checkMobile();
@@ -49,7 +45,6 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
         }
     };
 
-    // Sync Fullscreen State
     useEffect(() => {
         const handleFsChange = () => {
             setIsFullscreen(!!document.fullscreenElement);
@@ -64,12 +59,10 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
         };
     }, []);
 
-    // 1. Fetch Channel Info with Auto-Retry
     useEffect(() => {
         let isMounted = true;
         let retryTimeout = null;
 
-        // Reset states to force a visual "reload" and cleanup
         setStreamUrl(null);
         setIsOffline(false);
         setStreamStats(null);
@@ -79,14 +72,11 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
             try {
                 const data = await getChannelInfo(channel);
                 if (isMounted) {
-                    // Strict check: Must have playback_url AND be live
                     const isLive = data?.livestream?.is_live;
                     if (data && data.playback_url && isLive) {
-                        console.log(`[${channel}] Stream URL found & Live.`);
                         setStreamUrl(data.playback_url);
                         setIsOffline(false);
 
-                        // Parse Stats
                         if (data.livestream) {
                             const startTime = new Date(data.livestream.created_at).getTime();
                             setStreamStats({
@@ -94,35 +84,29 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                                 category: data.livestream.categories?.[0]?.name || 'Just Chatting',
                                 startTime: startTime,
                                 isLive: data.livestream.is_live,
-                                profilePic: data?.user?.profile_pic // Capture profile pic
+                                profilePic: data?.user?.profile_pic
                             });
                         } else if (data?.user?.profile_pic) {
-                            // even if offline, get pic
                             setStreamStats(prev => ({ ...prev, profilePic: data.user.profile_pic }));
                         }
 
-                        // Callback to parent to update avatar cache
                         if (data?.user?.profile_pic && onMetaUpdate) {
                             onMetaUpdate(channel, data.user.profile_pic);
                         }
                     } else {
-                        console.warn(`[${channel}] No playback_url. Retrying in 5s...`);
                         setIsOffline(true);
                         setStreamUrl(null);
                         setStreamStats(null);
-                        // Retry loop
                         retryTimeout = setTimeout(fetchStream, 5000);
                     }
                 }
             } catch (err) {
-                console.error(`[${channel}] Fetch Error. Retrying in 5s...`, err);
                 if (isMounted) {
                     retryTimeout = setTimeout(fetchStream, 5000);
                 }
             }
         };
 
-        // Initial fetch
         fetchStream();
 
         return () => {
@@ -131,7 +115,6 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
         };
     }, [channel, key]);
 
-    // Uptime Timer Logic
     useEffect(() => {
         if (uptimeIntervalRef.current) clearInterval(uptimeIntervalRef.current);
 
@@ -155,7 +138,6 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
         };
     }, [streamStats]);
 
-    // 2. Initialize HLS Player & Quality Handling
     useEffect(() => {
         if (isOffline || !streamUrl) return;
 
@@ -177,7 +159,6 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                     manifestLoadingMaxRetry: 10,
                     levelLoadingMaxRetry: 10,
                     fragLoadingMaxRetry: 10,
-                    // Low Latency Optimization
                     liveSyncDurationCount: 1.5,
                     liveMaxLatencyDurationCount: 3,
                     maxLiveSyncPlaybackRate: 2,
@@ -185,13 +166,11 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
 
                 hlsRef.current = hls;
 
-                // Proxy URL for CORS
                 const proxyUrl = `https://kickplayer-ahzd.onrender.com/proxy?url=${encodeURIComponent(streamUrl)}`;
                 hls.loadSource(proxyUrl);
                 hls.attachMedia(videoRef.current);
 
                 hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
-                    // Extract Qualities
                     if (hls.levels) {
                         const levels = hls.levels.map((lvl, index) => ({
                             id: index,
@@ -210,11 +189,9 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                     if (data.fatal) {
                         switch (data.type) {
                             case Hls.ErrorTypes.NETWORK_ERROR:
-                                console.log(`[${channel}] Network error, trying to start load...`);
                                 hls.startLoad();
                                 break;
                             case Hls.ErrorTypes.MEDIA_ERROR:
-                                console.log(`[${channel}] Media error, trying to recover...`);
                                 const now = Date.now();
                                 if (!recoverDecodingErrorDate || (now - recoverDecodingErrorDate) > 3000) {
                                     recoverDecodingErrorDate = now;
@@ -224,13 +201,11 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                                     hls.swapAudioCodec();
                                     hls.recoverMediaError();
                                 } else {
-                                    console.error(`[${channel}] Fatal media error, destroying...`);
                                     hls.destroy();
                                     setStreamUrl(null);
                                 }
                                 break;
                             default:
-                                console.error(`[${channel}] Unrecoverable error, destroying...`);
                                 hls.destroy();
                                 setStreamUrl(null);
                                 break;
@@ -238,14 +213,12 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                     }
                 });
             } else if (videoRef.current && videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
-                // Safari Native
                 videoRef.current.src = streamUrl;
                 videoRef.current.addEventListener('loadedmetadata', () => {
                     videoRef.current.play();
                 });
 
                 videoRef.current.onerror = () => {
-                    console.error(`[${channel}] Native Video Error. Retrying...`);
                     setTimeout(() => {
                         if (videoRef.current) videoRef.current.src = streamUrl;
                     }, 5000);
@@ -263,7 +236,6 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
         };
     }, [streamUrl, useCustomPlayer, isOffline]);
 
-    // 3. Handle Mute & Sync
     useEffect(() => {
         if (shouldMuteAll) setIsMuted(true);
     }, [shouldMuteAll]);
@@ -275,7 +247,6 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
         }
     }, [isMuted, volume]);
 
-    // Helpers
     const changeQuality = (levelId) => {
         if (hlsRef.current) {
             hlsRef.current.currentLevel = levelId;
@@ -318,23 +289,18 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
 
     const jumpToLive = () => {
         if (hlsRef.current) {
-            const now = Date.now();
-            hlsRef.current.startLoad(); // Ensure loading
-
-            // Try explicit seek to very end if live
+            hlsRef.current.startLoad();
             if (videoRef.current && videoRef.current.seekable.length > 0) {
-                videoRef.current.currentTime = videoRef.current.seekable.end(0) - 1.0; // 1s buffer
+                videoRef.current.currentTime = videoRef.current.seekable.end(0) - 1.0;
                 videoRef.current.play().catch(console.warn);
             }
         } else if (videoRef.current) {
-            // Native Safari
             if (videoRef.current.seekable.length > 0) {
                 videoRef.current.currentTime = videoRef.current.seekable.end(0) - 1.0;
             }
         }
     };
 
-    // Format Viewers (e.g. 12.5k)
     const formatViewers = (count) => {
         if (count >= 1000) return (count / 1000).toFixed(1) + 'k';
         return count;
@@ -347,8 +313,6 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
             onDoubleClick={!isMobile ? onToggleMaximize : undefined}
             className="relative w-full h-full bg-black border border-white/5 rounded-xl overflow-hidden flex flex-col group shadow-2xl ring-1 ring-white/5 hover:ring-kick-green/30 transition-all duration-300 pointer-events-auto"
         >
-
-            {/* --- MOBILE BACK BUTTON --- */}
             {isMobile && isMaximized && showMobileControls && (
                 <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
                     <button
@@ -361,7 +325,6 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                 </div>
             )}
 
-            {/* --- OVERLAY STATS (Top Left) --- */}
             <div className={`absolute top-4 left-4 z-30 flex flex-col gap-2 pointer-events-none transition-opacity duration-300 ${isMobile ? (showMobileControls ? 'opacity-100' : 'opacity-0') : 'opacity-0 group-hover:opacity-100'}`}>
                 <div className="flex items-center gap-2">
                     {!isOffline && streamStats?.isLive && (
@@ -500,7 +463,6 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                                 {isMuted ? <VolumeX size={14} className="md:w-4 md:h-4" /> : <Volume2 size={14} className="md:w-4 md:h-4" />}
                             </button>
 
-                            {/* Volume Slider */}
                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 pb-4 opacity-0 group-hover/volume:opacity-100 transition-all duration-200 pointer-events-none group-hover/volume:pointer-events-auto z-50 scale-95 group-hover/volume:scale-100 origin-bottom">
                                 <div className="p-3 bg-black/95 backdrop-blur-md rounded-xl border border-white/10 flex flex-col items-center gap-2 h-32 shadow-2xl min-w-[40px]">
                                     <input
@@ -521,9 +483,6 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                                     <span className="text-[10px] text-white font-black">{Math.round((isMuted ? 0 : volume) * 100)}%</span>
                                 </div>
                             </div>
-
-                            {/* Tooltip for Volume (Optional, added for consistency if slider logic permits, but let's keep it clean: User asked for tooltips above buttons) */}
-                            {/* Decided to NOT add text tooltip for Volume to avoid clash with slider which is the primary hover interaction */}
                         </div>
 
                         <div className="relative group/tooltip">

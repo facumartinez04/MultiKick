@@ -17,9 +17,8 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
     const [error, setError] = useState(null);
     const [isIdLoading, setIsIdLoading] = useState(false);
     const [showEmojis, setShowEmojis] = useState(false);
-    const [activeTab, setActiveTab] = useState('emojis'); // emojis, kick, 7tv
+    const [activeTab, setActiveTab] = useState('emojis');
 
-    // Emotes State
     const [kickEmotes, setKickEmotes] = useState([]);
     const [kickChannelEmotes, setKickChannelEmotes] = useState([]);
     const [seventvEmotes, setSeventvEmotes] = useState([]);
@@ -28,7 +27,6 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
     const [isBroadcaster, setIsBroadcaster] = useState(false);
     const [isModerator, setIsModerator] = useState(false);
 
-    // Sync permissions from parent (Chat detection)
     useEffect(() => {
         if (permissions) {
             if (permissions.isSubscriber) setIsSubscriber(true);
@@ -37,7 +35,6 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
         }
     }, [permissions]);
 
-    // 1. Fetch Broadcaster & Emotes
     useEffect(() => {
         let isMounted = true;
         const fetchData = async () => {
@@ -48,25 +45,17 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
             setSeventvEmotes([]);
             setKickChannelEmotes([]);
 
-
             try {
                 const token = localStorage.getItem('kick_access_token');
 
-                // Fetch Kick Channel Emotes
                 const kChanData = await getChannelEmotes(activeChat, token);
                 if (isMounted) {
                     if (Array.isArray(kChanData)) {
-                        // The API returns an array of emote sets.
-                        // 1. Channel Emotes (usually first, has 'slug')
-                        // 2. Global Emotes (name: "Global")
-                        // 3. Emojis (name: "Emojis")
-
                         const channelSet = kChanData.find(x => x.slug || x.id === parseInt(broadcasterId)) || kChanData[0];
                         if (channelSet?.emotes) {
                             setKickChannelEmotes(channelSet.emotes);
                         }
 
-                        // Extract Global Emotes
                         const globalSet = kChanData.find(x => x.name === 'Global');
                         if (globalSet?.emotes) {
                             setKickEmotes(globalSet.emotes);
@@ -81,7 +70,6 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
                     const id = info.user_id || info.userId || info.id;
                     if (id) {
                         setBroadcasterId(id);
-                        // Fetch 7TV for this user
                         const tvEmotes = await get7TVEmotes(id);
                         if (isMounted) setSeventvEmotes(tvEmotes);
                     } else {
@@ -92,7 +80,6 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
                 if (token) {
                     const relData = await getChannelUserRelationship(activeChat, token);
                     if (isMounted && relData) {
-                        // Update permissions based on API response
                         setIsSubscriber(!!relData.subscription);
                         setIsBroadcaster(!!relData.is_broadcaster);
                         setIsModerator(!!relData.is_moderator);
@@ -109,7 +96,6 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
         return () => { isMounted = false; };
     }, [activeChat]);
 
-    // 2. Fetch Global Emotes once
     useEffect(() => {
         getKickEmotes().then(data => {
             if (data && Array.isArray(data)) setKickEmotes(data);
@@ -126,7 +112,7 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
 
         setIsLoading(true);
         setError(null);
-        setShowEmojis(false); // Close emojis on send 
+        setShowEmojis(false);
 
         const attemptSend = async (tokenToUse) => {
             await sendChatMessage(tokenToUse, broadcasterId, msgToSend);
@@ -139,22 +125,15 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
             console.error("Chat Error:", err);
             const errMsg = err.message?.toLowerCase() || '';
 
-            // Check for Auth Error (401)
             if (errMsg.includes('401') || errMsg.includes('unauthenticated')) {
-                console.log("Token expired (401), attempting refresh...");
                 const refreshTokenStr = localStorage.getItem('kick_refresh_token');
 
                 if (refreshTokenStr) {
                     try {
                         const newData = await refreshAccessToken(refreshTokenStr);
-                        console.log("Token refreshed successfully!");
-
-                        // Notify parent
                         if (onTokenUpdate) {
                             onTokenUpdate(newData);
                         }
-
-                        // Retry
                         await attemptSend(newData.access_token);
                         setMessage('');
                         return;
@@ -202,11 +181,8 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
 
     return (
         <div className="p-3 bg-kick-surface border-t border-white/10 flex flex-col gap-2 relative">
-
-            {/* Emote/Emoji Picker Popup */}
             {showEmojis && (
                 <div className="absolute bottom-[105%] left-3 right-3 bg-black/95 backdrop-blur-2xl border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-bottom-2 duration-200 flex flex-col max-h-80">
-                    {/* Tabs */}
                     <div className="flex bg-white/5 p-1 shrink-0">
                         {['emojis', 'kick', '7tv'].map(tab => (
                             <button
@@ -242,8 +218,6 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
                                         <div className="grid grid-cols-6 gap-2">
                                             {kickChannelEmotes.map((emote, idx) => {
                                                 const isSubOnly = emote.subscribers_only;
-                                                // Assuming strict check for now: only broadcaster can use sub emotes in this implementation
-                                                // Real implementation would require checking if 'userData' is subscribed to 'activeChat' via API
                                                 const canUse = !isSubOnly || isSubscriber || isBroadcaster || isModerator;
 
                                                 return (
@@ -359,7 +333,6 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
                 </div>
             )}
 
-            {/* User Logged In Header */}
             <div className="flex items-center justify-between bg-white/5 p-2 rounded-lg">
                 <div className="flex items-center gap-2 overflow-hidden">
                     <div className="w-6 h-6 rounded-full bg-kick-green flex items-center justify-center shrink-0 overflow-hidden border border-white/10">
@@ -382,7 +355,6 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
                 </button>
             </div>
 
-            {/* Status / Error Messsages */}
             {isIdLoading && (
                 <div className="text-xs text-center text-gray-500 flex items-center justify-center gap-2">
                     <Loader2 size={12} className="animate-spin" />
@@ -396,7 +368,6 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
                 </div>
             )}
 
-            {/* Input Form */}
             <form onSubmit={handleSubmit} className="relative flex gap-2">
                 <div className="relative flex-1">
                     <input

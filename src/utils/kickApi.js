@@ -56,16 +56,15 @@ export const getKickEmotes = async () => {
 
 export const get7TVEmotes = async (kickUserId) => {
     try {
-        // 7TV uses Kick User ID for its v3 API
         const response = await fetch(`https://7tv.io/v3/users/KICK/${kickUserId}`);
         if (!response.ok) return [];
         const data = await response.json();
-        // Extract emote set
         return data?.emote_set?.emotes || [];
     } catch (e) {
         return [];
     }
 };
+
 export const get7TVGlobalEmotes = async () => {
     try {
         const response = await fetch('https://7tv.io/v3/emote-sets/global');
@@ -84,8 +83,6 @@ export const getChannelEmotes = async (channelSlug, token = null) => {
             headers['Authorization'] = `Bearer ${token}`;
         }
 
-        // User requested URL: https://kick.com/emotes/[channel]
-        // We try to fetch from there, but handle if it's not JSON (fallback to API v2)
         const response = await fetch(`https://kick.com/emotes/${channelSlug}`, {
             headers
         });
@@ -95,7 +92,6 @@ export const getChannelEmotes = async (channelSlug, token = null) => {
             return await response.json();
         }
 
-        // Fallback: API V2
         const v2Response = await fetch(`https://kick.com/api/v2/channels/${channelSlug}/emotes`, {
             headers
         });
@@ -116,7 +112,6 @@ export const getChannelUserRelationship = async (channelSlug, token = null) => {
             'Accept': 'application/json'
         };
 
-        console.log('Fetching relationship with token:', token);
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         }

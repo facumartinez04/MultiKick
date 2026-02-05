@@ -10,46 +10,40 @@ const KickChat = ({ channel, active, userData, onPermissionsUpdate }) => {
     const [messages, setMessages] = useState([]);
     const [chatroomId, setChatroomId] = useState(null);
     const [connectionStatus, setConnectionStatus] = useState('Disconnected');
-    const [emoteMap, setEmoteMap] = useState({}); // { name: url }
+    const [emoteMap, setEmoteMap] = useState({});
 
     const bottomRef = useRef(null);
     const pusherRef = useRef(null);
     const channelRef = useRef(null);
     const userDataRef = useRef(userData);
 
-    // Keep userData ref up to date
     useEffect(() => {
         userDataRef.current = userData;
     }, [userData]);
 
-    // 1. Fetch Chatroom ID & 7TV Emotes
     useEffect(() => {
         if (!channel) return;
 
         const fetchInfo = async () => {
             setConnectionStatus('Fetching Info...');
-            setMessages([]); // Clear on channel switch
+            setMessages([]);
             try {
                 const data = await getChannelInfo(channel);
                 if (data && data.chatroom && data.chatroom.id) {
                     setChatroomId(data.chatroom.id);
                     setConnectionStatus('Connecting Socket...');
 
-                    // Fetch 7TV Emotes for this channel
                     const userId = data.user_id || data.id;
                     const channelEmotes = await get7TVEmotes(userId);
                     const globalEmotes = await get7TVGlobalEmotes();
-                    const kickChannelEmotes = await getChannelEmotes(channel); // Fetch Kick Channel Emotes
+                    const kickChannelEmotes = await getChannelEmotes(channel);
 
-                    // Create lookup map
                     const map = {};
                     [...globalEmotes, ...channelEmotes].forEach(e => {
                         map[e.name] = e.data.host.url + '/2x.webp';
                     });
 
-                    // Add Kick Channel Emotes to Map
                     if (Array.isArray(kickChannelEmotes)) {
-                        // Flatten the structure: [ {emotes:[]}, {emotes:[]} ]
                         const allEmotes = kickChannelEmotes.flatMap(category => category.emotes || []);
 
                         allEmotes.forEach(e => {
@@ -73,11 +67,9 @@ const KickChat = ({ channel, active, userData, onPermissionsUpdate }) => {
         fetchInfo();
     }, [channel]);
 
-    // 2. Connect Pusher
     useEffect(() => {
         if (!chatroomId) return;
 
-        // Cleanup old connection
         if (pusherRef.current) {
             pusherRef.current.disconnect();
         }
@@ -116,7 +108,6 @@ const KickChat = ({ channel, active, userData, onPermissionsUpdate }) => {
                 return newMsgs;
             });
 
-            // Check permissions dynamically from chat
             const currentUser = userDataRef.current;
             if (currentUser && parsed?.sender?.username?.toLowerCase() === currentUser?.username?.toLowerCase() && onPermissionsUpdate) {
                 const badges = parsed.sender.identity?.badges || [];
@@ -146,7 +137,6 @@ const KickChat = ({ channel, active, userData, onPermissionsUpdate }) => {
     const containerRef = useRef(null);
     const [autoScroll, setAutoScroll] = useState(true);
 
-    // 3. Auto-scroll Logic
     useEffect(() => {
         if (autoScroll && containerRef.current) {
             containerRef.current.scrollTop = containerRef.current.scrollHeight;
@@ -167,7 +157,6 @@ const KickChat = ({ channel, active, userData, onPermissionsUpdate }) => {
         }
     };
 
-    // Render 7TV Emotes within a text part
     const renderTextWith7TV = (text, keyPrefix) => {
         if (!text) return null;
         const words = text.split(' ');
@@ -207,24 +196,20 @@ const KickChat = ({ channel, active, userData, onPermissionsUpdate }) => {
         });
     };
 
-    // Render Message Content (text + kick emotes + 7TV emotes)
     const renderContent = (content) => {
         if (!content) return null;
 
-        // Regex for Kick Emotes: [emote:37230:POLICE]
         const kickEmoteRegex = /\[emote:(\d+):([\w]+)\]/g;
         const result = [];
         let lastIndex = 0;
         let match;
 
         while ((match = kickEmoteRegex.exec(content)) !== null) {
-            // Text before Kick emote (check for 7TV here)
             if (match.index > lastIndex) {
                 const textBefore = content.substring(lastIndex, match.index);
                 result.push(renderTextWith7TV(textBefore, `text-${lastIndex}`));
             }
 
-            // Push the Kick Emote
             const emoteId = match[1];
             const emoteName = match[2];
             result.push(
@@ -240,7 +225,6 @@ const KickChat = ({ channel, active, userData, onPermissionsUpdate }) => {
             lastIndex = kickEmoteRegex.lastIndex;
         }
 
-        // Remaining text after last Kick emote (check for 7TV here)
         if (lastIndex < content.length) {
             const remainingText = content.substring(lastIndex);
             result.push(renderTextWith7TV(remainingText, `text-end-${lastIndex}`));
@@ -257,7 +241,6 @@ const KickChat = ({ channel, active, userData, onPermissionsUpdate }) => {
         return { label: 'Desconectado', color: 'text-gray-500', dot: 'bg-gray-500' };
     };
 
-    // Render Badges
     const renderBadges = (badges) => {
         if (!badges || !Array.isArray(badges)) return null;
 
@@ -284,7 +267,7 @@ const KickChat = ({ channel, active, userData, onPermissionsUpdate }) => {
                         </span>
                     );
                 case 'subscriber':
-                case 'founder': // OG Subs often called founder
+                case 'founder':
                     return (
                         <span key={i} title="Subscriber" className="mr-1">
                             <Star size={14} className="text-kick-green" />
@@ -368,4 +351,3 @@ const KickChat = ({ channel, active, userData, onPermissionsUpdate }) => {
 };
 
 export default KickChat;
-

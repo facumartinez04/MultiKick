@@ -1,5 +1,3 @@
-// PKCE Helper Functions
-
 const generateRandomString = (length) => {
     const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
     let text = '';
@@ -35,8 +33,6 @@ const generateCodeChallenge = async (v) => {
     return base64encoded;
 };
 
-// -- Main Auth Functions --
-
 export const initiateLogin = async () => {
     const clientId = import.meta.env.VITE_KICK_CLIENT_ID;
     const redirectUri = import.meta.env.VITE_KICK_REDIRECT_URI;
@@ -49,20 +45,17 @@ export const initiateLogin = async () => {
     const codeVerifier = generateRandomString(128);
     const codeChallenge = await generateCodeChallenge(codeVerifier);
 
-    // Save verifier for later
     localStorage.setItem('kick_code_verifier', codeVerifier);
 
     const scope = 'user:read chat:write';
-    const state = generateRandomString(32); // CSRF Protection
+    const state = generateRandomString(32);
     localStorage.setItem('kick_auth_state', state);
 
-    // Clean inputs to avoid whitespace errors
     const cleanClientId = clientId.trim();
     const cleanRedirectUri = redirectUri.trim();
 
     const authUrl = `https://id.kick.com/oauth/authorize?response_type=code&client_id=${cleanClientId}&redirect_uri=${encodeURIComponent(cleanRedirectUri)}&scope=${encodeURIComponent(scope)}&code_challenge=${codeChallenge}&code_challenge_method=S256&state=${state}`;
 
-    console.log("Redirecting to Kick Auth:", authUrl);
     window.location.href = authUrl;
 };
 
@@ -76,7 +69,6 @@ export const handleCallback = async (code) => {
         throw new Error('No code verifier found');
     }
 
-    // Prepare Body
     const params = new URLSearchParams();
     params.append('grant_type', 'authorization_code');
     params.append('client_id', clientId);
@@ -103,7 +95,6 @@ export const handleCallback = async (code) => {
 
     const tokenData = await response.json();
 
-    // Fetch User Data immediately
     try {
         const userData = await fetchCurrentUser(tokenData.access_token);
         return { ...tokenData, user: userData };
@@ -161,7 +152,7 @@ export const refreshAccessToken = async (refreshToken) => {
         }
 
         const data = await response.json();
-        return data; // Returns { access_token, refresh_token, expires_in, etc }
+        return data;
     } catch (e) {
         console.error("Failed to refresh token", e);
         throw e;

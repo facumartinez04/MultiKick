@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 import { Users, Lock, Unlock, AlertCircle } from 'lucide-react';
 
-// Connect to socket server
 const socket = io('https://kickplayer-ahzd.onrender.com/');
 
 const AdminPage = () => {
@@ -11,7 +10,7 @@ const AdminPage = () => {
     const [onlineCount, setOnlineCount] = useState(0);
     const [error, setError] = useState('');
 
-    const SECRET_KEY = "admin123"; // You can change this obviously
+    const SECRET_KEY = "admin123";
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -78,7 +77,6 @@ const AdminPage = () => {
 
     return (
         <div className="min-h-screen bg-black flex flex-col items-center justify-center font-sans text-white relative overflow-hidden">
-            {/* Background Effects */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
                 <div className="absolute top-[-20%] left-[-20%] w-[50%] h-[50%] bg-kick-green/10 rounded-full blur-[150px]"></div>
             </div>

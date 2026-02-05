@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 import { Lock, Users, Unlock } from 'lucide-react';
 
-// Connect to the socket server (adjust port if needed)
 const socket = io('https://kickplayer-ahzd.onrender.com/');
 
 const AdminStats = () => {
@@ -11,11 +10,9 @@ const AdminStats = () => {
     const [password, setPassword] = useState('');
     const [showInput, setShowInput] = useState(false);
 
-    // Hardcoded secret key for demo purposes
     const SECRET_KEY = "admin123";
 
     useEffect(() => {
-        // Listen for online users count
         socket.on('online_users', (data) => {
             setOnlineCount(data.count);
         });
