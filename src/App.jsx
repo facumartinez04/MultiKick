@@ -4,7 +4,7 @@ import KickPlayer from './components/KickPlayer';
 import KickChat from './components/KickChat';
 import ChatInput from './components/ChatInput';
 import AdminPage from './components/AdminPage';
-import { initiateLogin, handleCallback, fetchCurrentUser } from './utils/kickAuth';
+import { initiateLogin, handleCallback, fetchCurrentUser, refreshAccessToken } from './utils/kickAuth';
 
 function App() {
   const [channels, setChannels] = useState([]);
@@ -80,8 +80,40 @@ function App() {
             localStorage.setItem('kick_user', JSON.stringify(user));
           }
         })
-        .catch(err => {
-          console.error("Failed to repair user data", err);
+        .catch(async (err) => {
+          console.error("Failed to repair user data (" + err.message + "). Attempting refresh...");
+          const refreshToken = localStorage.getItem('kick_refresh_token');
+          if (refreshToken) {
+            try {
+              const newData = await refreshAccessToken(refreshToken);
+              if (newData.access_token) {
+                console.log("Token refreshed successfully on startup");
+                localStorage.setItem('kick_access_token', newData.access_token);
+                if (newData.refresh_token) {
+                  localStorage.setItem('kick_refresh_token', newData.refresh_token);
+                }
+                setUserToken(newData.access_token);
+
+                // Retry fetch user with new token
+                const user = await fetchCurrentUser(newData.access_token);
+                if (user) {
+                  setUserData(user);
+                  localStorage.setItem('kick_user', JSON.stringify(user));
+                }
+              }
+            } catch (refreshErr) {
+              console.error("Auto-refresh failed during startup", refreshErr);
+              // Token is dead, clear it
+              localStorage.removeItem('kick_access_token');
+              localStorage.removeItem('kick_refresh_token');
+              localStorage.removeItem('kick_user');
+              setUserToken(null);
+            }
+          } else {
+            // No refresh token, clear invalid access token
+            localStorage.removeItem('kick_access_token');
+            setUserToken(null);
+          }
         });
     }
   }, [userToken, userData]);
@@ -115,6 +147,9 @@ function App() {
         .then(data => {
           if (data.access_token) {
             localStorage.setItem('kick_access_token', data.access_token);
+            if (data.refresh_token) {
+              localStorage.setItem('kick_refresh_token', data.refresh_token);
+            }
             setUserToken(data.access_token);
             if (data.user) {
               localStorage.setItem('kick_user', JSON.stringify(data.user));
