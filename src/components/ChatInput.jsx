@@ -394,6 +394,11 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
                     {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                 </button>
             </form>
+
+            <div className="flex items-center justify-center gap-1.5 mt-2 opacity-60 hover:opacity-100 transition-opacity select-none">
+                <AlertCircle size={10} className="text-gray-400" />
+                <span className="text-[10px] text-gray-500">¿Problemas para enviar? <button onClick={onLogout} className="underline hover:text-kick-green transition-colors">Reconectar cuenta</button></span>
+            </div>
         </div>
     );
 };

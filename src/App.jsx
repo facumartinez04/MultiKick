@@ -316,7 +316,8 @@ function App() {
     } else {
       // Standard Desktop Logic
       // Width
-      if (total <= 4) classes += " md:w-1/2";
+      if (total === 1) classes += " md:w-full";
+      else if (total <= 4) classes += " md:w-1/2";
       else classes += " md:w-1/3";
 
       // Height
