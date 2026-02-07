@@ -10,7 +10,7 @@ const AdminStats = () => {
     const [password, setPassword] = useState('');
     const [showInput, setShowInput] = useState(false);
 
-    const SECRET_KEY = "admin123";
+    const SECRET_KEY = import.meta.env.VITE_ADMIN_PASSWORD;
 
     useEffect(() => {
         socket.on('online_users', (data) => {

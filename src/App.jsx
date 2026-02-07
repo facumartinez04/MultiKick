@@ -4,6 +4,7 @@ import KickPlayer from './components/KickPlayer';
 import KickChat from './components/KickChat';
 import ChatInput from './components/ChatInput';
 import LandingPage from './components/LandingPage';
+import AdminPage from './components/AdminPage';
 import { initiateLogin, handleCallback, fetchCurrentUser, refreshAccessToken } from './utils/kickAuth';
 
 function App() {

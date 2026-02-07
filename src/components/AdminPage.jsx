@@ -10,7 +10,7 @@ const AdminPage = () => {
     const [onlineCount, setOnlineCount] = useState(0);
     const [error, setError] = useState('');
 
-    const SECRET_KEY = "admin123";
+    const SECRET_KEY = "pruebas123";
 
     useEffect(() => {
         if (isAuthenticated) {
