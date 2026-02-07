@@ -29,6 +29,7 @@ function App() {
   const [channelViewers, setChannelViewers] = useState({});
   const [showShareModal, setShowShareModal] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   const handleCopyUrl = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -55,27 +56,64 @@ function App() {
   }, [activeChat]);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const queryChannels = params.get('channels')?.split(',') || [];
-    const pathChannels = window.location.pathname.split('/')
-      .map(c => c.trim())
-      .filter(c => c.length > 0 && c !== 'index.html');
+    const initializeChannels = async () => {
+      setIsInitializing(true);
+      const params = new URLSearchParams(window.location.search);
+      const queryChannels = params.get('channels')?.split(',') || [];
+      const pathSegments = window.location.pathname.split('/')
+        .map(c => c.trim())
+        .filter(c => c.length > 0 && c !== 'index.html' && c !== 'viewadmin');
 
-    let allChannels = [...pathChannels, ...queryChannels]
-      .map(c => c.trim())
-      .filter(c => c.length > 0);
+      // Check for custom slug if there's exactly one path segment and no query channels
+      let slugFound = false;
+      if (pathSegments.length === 1 && queryChannels.length === 0) {
+        const potentialSlug = pathSegments[0];
+        try {
+          const res = await fetch(`https://kickplayer-ahzd.onrender.com/api/slug/${potentialSlug}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.channels && Array.isArray(data.channels) && data.channels.length > 0) {
+              setChannels(data.channels);
+              setActiveChat(data.channels[0]);
+              setIsStreamActive(true);
+              if (potentialSlug.toLowerCase() === 'lostopglobales') {
+                setIsTopGlobales(true);
+              }
+              slugFound = true;
+            }
+          }
+        } catch (e) {
+          console.error("Error checking slug:", e);
+        }
+      }
 
-    if (allChannels.some(c => c.toLowerCase() === 'lostopglobales')) {
-      allChannels = ['duendepablo', 'zeko', 'goncho', 'coker', 'coscu', 'robergalati'];
-      setIsTopGlobales(true);
-    }
+      if (!slugFound) {
+        // Existing fallback logic
+        let allChannels = [...pathSegments, ...queryChannels]
+          .map(c => c.trim())
+          .filter(c => c.length > 0);
 
-    const uniqueChannels = [...new Set(allChannels)].slice(0, 9);
+        if (allChannels.some(c => c.toLowerCase() === 'lostopglobales')) {
+          allChannels = ['duendepablo', 'zeko', 'goncho', 'coker', 'coscu', 'robergalati'];
+          setIsTopGlobales(true);
+        }
 
-    if (uniqueChannels.length > 0) {
-      setChannels(uniqueChannels);
-      setActiveChat(uniqueChannels[0]);
-      setIsStreamActive(true);
+        const uniqueChannels = [...new Set(allChannels)].slice(0, 9);
+
+        if (uniqueChannels.length > 0) {
+          setChannels(uniqueChannels);
+          setActiveChat(uniqueChannels[0]);
+          setIsStreamActive(true);
+        }
+      }
+
+      setIsInitializing(false);
+    };
+
+    if (window.location.pathname !== '/viewadmin') {
+      initializeChannels();
+    } else {
+      setIsInitializing(false);
     }
   }, []);
 
@@ -313,6 +351,17 @@ function App() {
     }
     return classes;
   };
+
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen bg-kick-dark flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-kick-green border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-kick-green font-bold animate-pulse">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (window.location.pathname === '/viewadmin') {
     return <AdminPage />;
