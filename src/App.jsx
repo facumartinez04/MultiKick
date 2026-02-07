@@ -49,7 +49,7 @@ function App() {
       .filter(c => c.length > 0);
 
     if (allChannels.some(c => c.toLowerCase() === 'lostopglobales')) {
-      allChannels = ['duendepablo', 'zeko', 'goncho', 'coker', 'coscu', 'robergalati'];
+      allChannels = ['duendepablo', 'zeko', 'goncho', 'coker', 'coscu', 'momoladinastia'];
       setIsTopGlobales(true);
     }
 
