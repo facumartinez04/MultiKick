@@ -344,7 +344,7 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                 <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
                     <button
                         onClick={(e) => { e.stopPropagation(); onToggleMaximize(); }}
-                        className="bg-black/80 backdrop-blur-md border border-white/20 text-white px-4 py-2 rounded-full flex items-center gap-2 shadow-xl active:scale-95 transition-transform"
+                        className="bg-black/80 backdrop-blur-md border border-white/20 text-white px-4 py-2 rounded-full flex items-center gap-2 shadow-xl active:scale-95 transition-transform cursor-pointer"
                     >
                         <X size={14} />
                         <span className="text-xs font-bold">Volver a pantallas</span>
@@ -374,11 +374,7 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                 </div>
             </div>
 
-            <div className="absolute bottom-16 right-4 z-20 pointer-events-none opacity-20 group-hover:opacity-50 transition-opacity">
-                <span className="text-white/80 font-black italic tracking-tighter text-[10px] drop-shadow-md">
-                    MULTIKICK<span className="text-kick-green">.LAT</span>
-                </span>
-            </div>
+
 
             <div className="flex-grow relative bg-zinc-900">
                 {isOffline ? (
@@ -411,7 +407,7 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                                 e.stopPropagation();
                                 setIsMuted(false);
                             }}
-                            className="bg-black/50 backdrop-blur-sm border border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white p-2 rounded-full flex items-center justify-center transition-all shadow-xl animate-in zoom-in-95 hover:scale-110"
+                            className="bg-black/50 backdrop-blur-sm border border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white p-2 rounded-full flex items-center justify-center transition-all shadow-xl animate-in zoom-in-95 hover:scale-110 cursor-pointer"
                             title="Click para activar sonido"
                         >
                             <VolumeX size={20} strokeWidth={1.5} />
@@ -423,7 +419,7 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                     <div className="absolute bottom-16 right-4 z-30 bg-black/90 border border-white/10 rounded-lg p-2 flex flex-col gap-1 min-w-[100px] shadow-xl backdrop-blur-md">
                         <button
                             onClick={() => changeQuality(-1)}
-                            className={`text-xs px-3 py-1.5 rounded hover:bg-white/10 text-left transition-colors ${currentQuality === -1 ? 'text-kick-green font-bold' : 'text-white'}`}
+                            className={`text-xs px-3 py-1.5 rounded hover:bg-white/10 text-left transition-colors cursor-pointer ${currentQuality === -1 ? 'text-kick-green font-bold' : 'text-white'}`}
                         >
                             Auto
                         </button>
@@ -431,7 +427,7 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                             <button
                                 key={q.id}
                                 onClick={() => changeQuality(q.id)}
-                                className={`text-xs px-3 py-1.5 rounded hover:bg-white/10 text-left transition-colors ${currentQuality === q.id ? 'text-kick-green font-bold' : 'text-white'}`}
+                                className={`text-xs px-3 py-1.5 rounded hover:bg-white/10 text-left transition-colors cursor-pointer ${currentQuality === q.id ? 'text-kick-green font-bold' : 'text-white'}`}
                             >
                                 {q.name}
                             </button>
@@ -457,7 +453,7 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                         <div className="relative group/tooltip">
                             <button
                                 onClick={togglePlay}
-                                className="p-1 md:p-1.5 rounded-md hover:bg-white/10 text-white transition-colors"
+                                className="p-1 md:p-1.5 rounded-md hover:bg-white/10 text-white transition-colors cursor-pointer"
                             >
                                 {isPlaying ? <Pause size={14} className="md:w-4 md:h-4" /> : <Play size={14} className="md:w-4 md:h-4" />}
                             </button>
@@ -471,7 +467,7 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                             <div className="relative group/tooltip">
                                 <button
                                     onClick={() => setShowQualityMenu(!showQualityMenu)}
-                                    className={`p-1 md:p-1.5 rounded-md hover:bg-white/10 text-white transition-colors ${showQualityMenu ? 'text-kick-green' : ''}`}
+                                    className={`p-1 md:p-1.5 rounded-md hover:bg-white/10 text-white transition-colors cursor-pointer ${showQualityMenu ? 'text-kick-green' : ''}`}
                                 >
                                     <Settings size={14} className="md:w-4 md:h-4" />
                                 </button>
@@ -485,7 +481,7 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                         <div className="relative group/volume flex items-center">
                             <button
                                 onClick={(e) => { e.stopPropagation(); toggleMute(); }}
-                                className="p-1 md:p-1.5 rounded-md hover:bg-white/10 text-white transition-colors"
+                                className="p-1 md:p-1.5 rounded-md hover:bg-white/10 text-white transition-colors cursor-pointer"
                             >
                                 {isMuted ? <VolumeX size={14} className="md:w-4 md:h-4" /> : <Volume2 size={14} className="md:w-4 md:h-4" />}
                             </button>
@@ -515,7 +511,7 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                         <div className="relative group/tooltip">
                             <button
                                 onClick={(e) => { e.stopPropagation(); jumpToLive(); }}
-                                className="p-1 md:p-1.5 rounded-md hover:bg-white/10 text-white transition-colors"
+                                className="p-1 md:p-1.5 rounded-md hover:bg-white/10 text-white transition-colors cursor-pointer"
                             >
                                 <Zap size={14} className="md:w-4 md:h-4 text-yellow-400 fill-yellow-400" />
                             </button>
@@ -528,7 +524,7 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                         <div className="relative group/tooltip">
                             <button
                                 onClick={(e) => { e.stopPropagation(); reload(); }}
-                                className="p-1 md:p-1.5 rounded-md hover:bg-white/10 text-white transition-colors"
+                                className="p-1 md:p-1.5 rounded-md hover:bg-white/10 text-white transition-colors cursor-pointer"
                             >
                                 <RefreshCw size={14} className="md:w-4 md:h-4" />
                             </button>
@@ -541,7 +537,7 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                         <div className="relative group/tooltip">
                             <button
                                 onClick={(e) => { e.stopPropagation(); onToggleMaximize(); }}
-                                className="p-1 md:p-1.5 rounded-md hover:bg-white/10 text-white transition-colors"
+                                className="p-1 md:p-1.5 rounded-md hover:bg-white/10 text-white transition-colors cursor-pointer"
                             >
                                 {isMaximized ? <Minimize2 size={14} className="md:w-4 md:h-4" /> : <Maximize size={14} className="md:w-4 md:h-4" />}
                             </button>
@@ -554,7 +550,7 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                         <div className="relative group/tooltip ml-1">
                             <button
                                 onClick={(e) => { e.stopPropagation(); onRemove(channel); }}
-                                className="p-1 md:p-1.5 rounded-md hover:bg-red-500/20 text-red-400 hover:text-white transition-colors"
+                                className="p-1 md:p-1.5 rounded-md hover:bg-red-500/20 text-red-400 hover:text-white transition-colors cursor-pointer"
                             >
                                 <X size={14} className="md:w-4 md:h-4" />
                             </button>

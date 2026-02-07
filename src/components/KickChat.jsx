@@ -256,9 +256,12 @@ const KickChat = ({ channel, active, userData, onPermissionsUpdate }) => {
                     );
                 case 'moderator':
                     return (
-                        <span key={i} title="Moderator" className="mr-1">
-                            <ShieldCheck size={14} className="text-kick-green fill-kick-green/20" />
-                        </span>
+                        <img key={i} src="/iconos/mod.svg" alt="Moderator" title="Moderator" className="w-3.5 h-3.5 mr-1 inline-block align-middle" />
+                    );
+                case 'verified':
+                case 'partner':
+                    return (
+                        <img key={i} src="/iconos/verified.svg" alt="Verified" title="Verified" className="w-3.5 h-3.5 mr-1 inline-block align-middle" />
                     );
                 case 'vip':
                     return (

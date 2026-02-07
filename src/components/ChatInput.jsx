@@ -171,7 +171,7 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
                 <p className="text-xs text-gray-400">Inicia sesión para chatear</p>
                 <button
                     onClick={handleLogin}
-                    className="w-full bg-kick-green text-black font-bold py-2 rounded-lg hover:bg-kick-green/90 transition-colors text-sm"
+                    className="w-full bg-kick-green text-black font-bold py-2 rounded-lg hover:bg-kick-green/90 transition-colors text-sm cursor-pointer"
                 >
                     Conectar con Kick
                 </button>
