@@ -144,6 +144,21 @@ app.get('/api/admin/slugs', authenticateAdmin, (req, res) => {
     res.json({ slugs: slugsArray });
 });
 
+// Endpoint para Eliminar Slug (Admin - PROTEGIDO)
+app.delete('/api/admin/slug/:slug', authenticateAdmin, (req, res) => {
+    const { slug } = req.params;
+
+    const slugs = readSlugs();
+    if (!slugs[slug]) {
+        return res.status(404).json({ error: "Slug not found" });
+    }
+
+    delete slugs[slug];
+    writeSlugs(slugs);
+
+    res.json({ message: "slug eliminado exitosamente", slug });
+});
+
 // Endpoint para Obtener Canales por Slug (PÚBLICO)
 app.get('/api/slug/:slug', (req, res) => {
     const { slug } = req.params;

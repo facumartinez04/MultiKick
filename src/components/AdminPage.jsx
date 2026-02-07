@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
-import { Users, Lock, Unlock, AlertCircle, Edit2, X, Check } from 'lucide-react';
+import { Users, Lock, Unlock, AlertCircle, Edit2, X, Check, Trash2 } from 'lucide-react';
 
 const socket = io('https://kickplayer-ahzd.onrender.com/');
 
@@ -181,6 +181,28 @@ const SlugList = () => {
         }
     };
 
+    const handleDelete = async (slug) => {
+        if (!window.confirm(`¿Estás seguro de que quieres eliminar el slug "${slug}"?`)) return;
+
+        const token = localStorage.getItem('adminToken');
+        try {
+            const res = await fetch(`https://kickplayer-ahzd.onrender.com/api/admin/slug/${slug}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (res.ok) {
+                fetchSlugs();
+            } else {
+                alert('Error al eliminar el slug');
+            }
+        } catch (error) {
+            console.error("Error deleting slug:", error);
+        }
+    };
+
     useEffect(() => {
         fetchSlugs();
 
@@ -200,13 +222,22 @@ const SlugList = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {slugs.map((item) => (
                     <div key={item.slug} className="bg-white/5 border border-white/10 rounded-xl p-4 hover:border-kick-green/50 transition-colors relative group">
-                        <button
-                            onClick={() => setEditingSlug(item)}
-                            className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/50 text-gray-400 hover:text-white hover:bg-white/10 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
-                            title="Editar Slug"
-                        >
-                            <Edit2 size={14} />
-                        </button>
+                        <div className="absolute top-2 right-2 flex gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                            <button
+                                onClick={() => setEditingSlug(item)}
+                                className="p-1.5 rounded-lg bg-black/50 text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+                                title="Editar Slug"
+                            >
+                                <Edit2 size={14} />
+                            </button>
+                            <button
+                                onClick={() => handleDelete(item.slug)}
+                                className="p-1.5 rounded-lg bg-black/50 text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
+                                title="Eliminar Slug"
+                            >
+                                <Trash2 size={14} />
+                            </button>
+                        </div>
 
                         <div className="flex justify-between items-start mb-2 pr-8">
                             <span className="text-kick-green font-bold text-lg truncate" title={item.slug}>{item.slug}</span>
