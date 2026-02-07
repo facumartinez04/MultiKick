@@ -242,15 +242,41 @@ function App() {
   };
 
   const getGridClass = () => {
-    if (maximizedChannel) return 'grid grid-cols-1 grid-rows-1 h-full w-full';
-    const count = channels.length;
-    const base = "grid h-full w-full [grid-auto-rows:1fr]";
-    if (count === 0) return 'flex items-center justify-center h-full w-full';
-    if (count === 1) return `${base} grid-cols-1`;
-    if (count === 2) return `${base} grid-cols-2`;
-    if (count <= 4) return `${base} grid-cols-2`;
-    if (count <= 6) return `${base} grid-cols-2 md:grid-cols-3`;
-    return `${base} grid-cols-2 md:grid-cols-3`;
+    return "flex flex-wrap justify-center content-start w-full h-full";
+  };
+
+  const getItemClasses = (total) => {
+    if (maximizedChannel) return 'w-full h-full';
+
+    // Base (Mobile)
+    let classes = "w-1/2";
+    if (total === 1) classes = "w-full";
+
+    // Mobile Heights
+    if (total <= 2) classes += " h-full";
+    else if (total <= 4) classes += " h-1/2";
+    else if (total <= 6) classes += " h-1/3";
+    else if (total <= 8) classes += " h-1/4";
+    else classes += " h-[20%]";
+
+    // Desktop Overrides
+
+    // Optimization: When chat is closed (Wide), use 4 columns for 7-8 items to fit in 2 rows
+    if (!isChatOpen && (total === 7 || total === 8)) {
+      classes += " md:w-1/4 md:h-1/2";
+    } else {
+      // Standard Desktop Logic
+      // Width
+      if (total <= 4) classes += " md:w-1/2";
+      else classes += " md:w-1/3";
+
+      // Height
+      if (total <= 2) classes += " md:h-full";
+      else if (total <= 6) classes += " md:h-1/2";
+      else classes += " md:h-1/3";
+    }
+
+    return classes;
   };
 
   if (window.location.pathname === '/viewadmin') {
@@ -407,11 +433,14 @@ function App() {
         </header>
 
         <main className={`flex-1 relative overflow-hidden bg-black/50 ${getGridClass()}`}>
-          {channels.map((channel) => {
+          {channels.map((channel, index) => {
             if (maximizedChannel && maximizedChannel !== channel) return null;
 
             return (
-              <div key={channel} className="w-full h-full p-0.5 border-2 border-transparent hover:border-white/5 transition-all">
+              <div
+                key={channel}
+                className={`${getItemClasses(channels.length)} p-0.5 border-2 border-transparent hover:border-white/5 transition-all outline-none`}
+              >
                 <KickPlayer
                   channel={channel}
                   onRemove={removeChannel}
