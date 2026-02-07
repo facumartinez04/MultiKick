@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, MonitorPlay, MessageSquare, ArrowLeft, X, Play, VolumeX, LogOut, Maximize2, Minimize2 } from 'lucide-react';
 import KickPlayer from './components/KickPlayer';
 import KickChat from './components/KickChat';
@@ -26,12 +26,21 @@ function App() {
   const [chatPermissions, setChatPermissions] = useState({ isSubscriber: false, isBroadcaster: false, isModerator: false });
   const [channelAvatars, setChannelAvatars] = useState({});
 
+  const [channelViewers, setChannelViewers] = useState({});
+
   const handleMetaUpdate = (channel, profilePic) => {
     setChannelAvatars(prev => {
       if (prev[channel] === profilePic) return prev;
       return { ...prev, [channel]: profilePic };
     });
   };
+
+  const handleViewersUpdate = useCallback((channel, count) => {
+    setChannelViewers(prev => {
+      if (prev[channel] === count) return prev;
+      return { ...prev, [channel]: count };
+    });
+  }, []);
 
   useEffect(() => {
     setChatPermissions({ isSubscriber: false, isBroadcaster: false, isModerator: false });
@@ -214,6 +223,11 @@ function App() {
   };
 
   const removeChannel = (channelToRemove) => {
+    setChannelViewers(prev => {
+      const copy = { ...prev };
+      delete copy[channelToRemove];
+      return copy;
+    });
     const newChannels = channels.filter(c => c !== channelToRemove);
     setChannels(newChannels);
     updateUrl(newChannels);
@@ -394,8 +408,8 @@ function App() {
           <div className="justify-self-center flex justify-center min-w-0">
             {isTopGlobales && (
               <div className="hidden md:flex items-center gap-2 pointer-events-none z-30 whitespace-nowrap">
-                <span className="text-lg md:text-xl lg:text-2xl font-black italic tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-kick-green via-white to-kick-green animate-pulse drop-shadow-[0_0_15px_rgba(83,252,24,0.4)]">
-                  ★ LOS TOP GLOBALES ★
+                <span className="text-[10px] sm:text-[10px] md:text-xs lg:text-sm xl:text-lg font-black italic tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-kick-green via-white to-kick-green animate-pulse drop-shadow-[0_0_15px_rgba(83,252,24,0.4)]">
+                  ★ LOS TOP GLOBALES ({Object.values(channelViewers).reduce((a, b) => a + b, 0).toLocaleString()} VIEWERS) ★
                 </span>
               </div>
             )}
@@ -451,6 +465,7 @@ function App() {
                     setActiveChat(channel);
                   }}
                   onMetaUpdate={handleMetaUpdate}
+                  onViewersUpdate={handleViewersUpdate}
                 />
               </div>
             );

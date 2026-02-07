@@ -3,7 +3,7 @@ import { X, RefreshCw, Volume2, VolumeX, Maximize2, Minimize2, Maximize, Minimiz
 import { getChannelInfo } from '../utils/kickApi';
 import Hls from 'hls.js';
 
-const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMaximize, onMetaUpdate }) => {
+const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMaximize, onMetaUpdate, onViewersUpdate }) => {
     const [key, setKey] = useState(0);
     const [isMuted, setIsMuted] = useState(true);
     const [volume, setVolume] = useState(0.7);
@@ -86,6 +86,9 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                                 isLive: data.livestream.is_live,
                                 profilePic: data?.user?.profile_pic
                             });
+                            if (onViewersUpdate) {
+                                onViewersUpdate(channel, data.livestream.viewer_count || 0);
+                            }
                         } else if (data?.user?.profile_pic) {
                             setStreamStats(prev => ({ ...prev, profilePic: data.user.profile_pic }));
                         }
@@ -139,9 +142,32 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
     }, [streamStats]);
 
     useEffect(() => {
-        if (isOffline || !streamUrl) return;
+        if (!streamStats?.isLive) return;
 
-        let hls = null;
+        const updateInterval = setInterval(async () => {
+            try {
+                const data = await getChannelInfo(channel);
+                if (data?.livestream?.is_live) {
+                    const newViewers = data.livestream.viewer_count || 0;
+                    setStreamStats(prev => ({
+                        ...prev,
+                        viewers: newViewers,
+                        isLive: true
+                    }));
+                    if (onViewersUpdate) {
+                        onViewersUpdate(channel, newViewers);
+                    }
+                }
+            } catch (e) {
+                // Silent fail for background updates
+            }
+        }, 60000);
+
+        return () => clearInterval(updateInterval);
+    }, [streamStats?.isLive, channel, onViewersUpdate]);
+
+    // SECCIÓN CORREGIDA: Agregado useEffect y declaración de hls
+    useEffect(() => {
         let recoverDecodingErrorDate = null;
         let recoverSwapAudioCodecDate = null;
 
@@ -151,7 +177,7 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                     hlsRef.current.destroy();
                 }
 
-                hls = new Hls({
+                const hls = new Hls({
                     enableWorker: true,
                     lowLatencyMode: true,
                     backBufferLength: 90,
@@ -232,6 +258,7 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
             clearTimeout(timer);
             if (hlsRef.current) {
                 hlsRef.current.destroy();
+                hlsRef.current = null;
             }
         };
     }, [streamUrl, useCustomPlayer, isOffline]);
