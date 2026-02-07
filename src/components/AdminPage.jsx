@@ -108,12 +108,12 @@ const AdminPage = () => {
     }
 
     return (
-        <div className="min-h-screen bg-black flex flex-col items-center justify-center font-sans text-white relative overflow-hidden">
+        <div className="h-[100dvh] w-full bg-black flex flex-col text-white relative overflow-y-auto overflow-x-hidden font-sans scrollbar-thin scrollbar-thumb-kick-green scrollbar-track-transparent">
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
                 <div className="absolute top-[-20%] left-[-20%] w-[50%] h-[50%] bg-kick-green/10 rounded-full blur-[150px]"></div>
             </div>
 
-            <div className="z-10 w-full max-w-4xl px-4 animate-in fade-in zoom-in duration-500 flex flex-col items-center">
+            <div className="z-10 w-full max-w-4xl px-4 py-10 mx-auto animate-in fade-in zoom-in duration-500 flex flex-col items-center">
                 <div className="mb-4 flex items-center gap-4">
                     <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-gray-400 text-xs font-mono uppercase tracking-widest">
                         <Unlock size={12} className="text-kick-green" />
