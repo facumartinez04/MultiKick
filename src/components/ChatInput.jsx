@@ -46,7 +46,7 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
             setKickChannelEmotes([]);
 
             try {
-                const token = localStorage.getItem('kick_access_token');
+                const token = userToken;
 
                 const kChanData = await getChannelEmotes(activeChat, token);
                 if (isMounted) {
