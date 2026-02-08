@@ -35,7 +35,9 @@ export const sendChatMessage = async (token, broadcasterUserId, content) => {
 
         if (!response.ok) {
             const errText = await response.text();
-            throw new Error(`Failed to send message: ${errText}`);
+            const error = new Error(`Failed to send message: ${errText}`);
+            error.status = response.status;
+            throw error;
         }
 
         return await response.json();
@@ -120,9 +122,17 @@ export const getChannelUserRelationship = async (channelSlug, token = null) => {
             headers
         });
 
-        if (!response.ok) return null;
+        if (!response.ok) {
+            if (response.status === 401) {
+                const error = new Error("Unauthorized");
+                error.status = 401;
+                throw error;
+            }
+            return null;
+        }
         return await response.json();
     } catch (e) {
+        if (e.status === 401) throw e;
         console.error("Error fetching channel user relationship:", e);
         return null;
     }

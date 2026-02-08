@@ -87,6 +87,21 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
                 }
             } catch (e) {
                 console.error(e);
+                if (isMounted && (e.status === 401 || e.message?.toLowerCase().includes('unauthorized'))) {
+                    const refreshTokenStr = localStorage.getItem('kick_refresh_token');
+                    if (refreshTokenStr) {
+                        try {
+                            const newData = await refreshAccessToken(refreshTokenStr);
+                            if (onTokenUpdate) {
+                                onTokenUpdate(newData);
+                                // The useEffect will re-run because userToken changed
+                            }
+                        } catch (refreshErr) {
+                            console.error("Refresh failed in effect:", refreshErr);
+                            if (onLogout) onLogout();
+                        }
+                    }
+                }
             } finally {
                 if (isMounted) setIsIdLoading(false);
             }
@@ -94,7 +109,7 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
 
         fetchData();
         return () => { isMounted = false; };
-    }, [activeChat]);
+    }, [activeChat, userToken]);
 
     useEffect(() => {
         getKickEmotes().then(data => {
@@ -125,7 +140,7 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
             console.error("Chat Error:", err);
             const errMsg = err.message?.toLowerCase() || '';
 
-            if (errMsg.includes('401') || errMsg.includes('unauthenticated')) {
+            if (err.status === 401 || errMsg.includes('401') || errMsg.includes('unauthenticated') || errMsg.includes('unauthorized')) {
                 const refreshTokenStr = localStorage.getItem('kick_refresh_token');
 
                 if (refreshTokenStr) {
