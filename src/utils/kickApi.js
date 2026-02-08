@@ -127,6 +127,7 @@ export const getChannelUserRelationship = async (channelSlug, token = null) => {
             }
             return null;
         }
+
         return await response.json();
     } catch (e) {
         if (e.status === 401) throw e;
