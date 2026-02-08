@@ -77,6 +77,8 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
                     }
                 }
 
+                // Removed /me call to prevent lag
+                /*
                 if (token) {
                     const relData = await getChannelUserRelationship(activeChat, token);
                     if (isMounted && relData) {
@@ -85,6 +87,7 @@ const ChatInput = ({ activeChat, userToken, userData, onLogout, onLogin, onToken
                         setIsModerator(!!relData.is_moderator);
                     }
                 }
+                */
             } catch (e) {
                 console.error(e);
                 if (isMounted && (e.status === 401 || e.message?.toLowerCase().includes('unauthorized'))) {
