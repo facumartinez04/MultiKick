@@ -5,6 +5,7 @@ import KickChat from './components/KickChat';
 import ChatInput from './components/ChatInput';
 import LandingPage from './components/LandingPage';
 import AdminPage from './components/AdminPage';
+import AdminTopGlobales from './components/AdminTopGlobales';
 import { initiateLogin, handleCallback, fetchCurrentUser, refreshAccessToken } from './utils/kickAuth';
 
 function App() {
@@ -62,7 +63,7 @@ function App() {
       const queryChannels = params.get('channels')?.split(',') || [];
       const pathSegments = window.location.pathname.split('/')
         .map(c => c.trim())
-        .filter(c => c.length > 0 && c !== 'index.html' && c !== 'viewadmin');
+        .filter(c => c.length > 0 && c !== 'index.html' && c !== 'viewadmin' && c !== 'admin-topglobales');
 
       // Check for custom slug if there's exactly one path segment and no query channels
       let slugFound = false;
@@ -110,11 +111,13 @@ function App() {
       setIsInitializing(false);
     };
 
-    if (window.location.pathname !== '/viewadmin') {
+    const adminRoutes = ['/viewadmin', '/admin-topglobales'];
+    if (!adminRoutes.includes(window.location.pathname)) {
       initializeChannels();
     } else {
       setIsInitializing(false);
     }
+
   }, []);
 
   useEffect(() => {
@@ -365,6 +368,10 @@ function App() {
 
   if (window.location.pathname === '/viewadmin') {
     return <AdminPage />;
+  }
+
+  if (window.location.pathname === '/admin-topglobales') {
+    return <AdminTopGlobales />;
   }
 
   if (!isStreamActive) {
