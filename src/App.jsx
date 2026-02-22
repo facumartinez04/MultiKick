@@ -6,6 +6,7 @@ import ChatInput from './components/ChatInput';
 import LandingPage from './components/LandingPage';
 import AdminPage from './components/AdminPage';
 import AdminTopGlobales from './components/AdminTopGlobales';
+import SoloVideoPage from './components/SoloVideoPage';
 import { initiateLogin, handleCallback, fetchCurrentUser, refreshAccessToken } from './utils/kickAuth';
 
 function App() {
@@ -63,7 +64,7 @@ function App() {
       const queryChannels = params.get('channels')?.split(',') || [];
       const pathSegments = window.location.pathname.split('/')
         .map(c => c.trim())
-        .filter(c => c.length > 0 && c !== 'index.html' && c !== 'viewadmin' && c !== 'admin-topglobales');
+        .filter(c => c.length > 0 && c !== 'index.html' && c !== 'viewadmin' && c !== 'admin-topglobales' && c !== 'solovideo');
 
       // Check for custom slug if there's exactly one path segment and no query channels
       let slugFound = false;
@@ -111,8 +112,10 @@ function App() {
       setIsInitializing(false);
     };
 
-    const adminRoutes = ['/viewadmin', '/admin-topglobales'];
-    if (!adminRoutes.includes(window.location.pathname)) {
+    const specialRoutes = ['/viewadmin', '/admin-topglobales'];
+    const isSoloVideo = window.location.pathname.startsWith('/solovideo/');
+
+    if (!specialRoutes.includes(window.location.pathname) && !isSoloVideo) {
       initializeChannels();
     } else {
       setIsInitializing(false);
@@ -368,6 +371,13 @@ function App() {
 
   if (window.location.pathname === '/viewadmin') {
     return <AdminPage />;
+  }
+
+  if (window.location.pathname.startsWith('/solovideo/')) {
+    const streamer = window.location.pathname.split('/')[2];
+    if (streamer) {
+      return <SoloVideoPage streamer={streamer} />;
+    }
   }
 
   if (window.location.pathname === '/admin-topglobales') {

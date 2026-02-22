@@ -3,9 +3,9 @@ import { X, RefreshCw, Volume2, VolumeX, Maximize2, Minimize2, Maximize, Minimiz
 import { getChannelInfo } from '../utils/kickApi';
 import Hls from 'hls.js';
 
-const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMaximize, onMetaUpdate, onViewersUpdate }) => {
+const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMaximize, onMetaUpdate, onViewersUpdate, solo = false, full = false }) => {
     const [key, setKey] = useState(0);
-    const [isMuted, setIsMuted] = useState(true);
+    const [isMuted, setIsMuted] = useState(!full);
     const [volume, setVolume] = useState(0.7);
     const [streamUrl, setStreamUrl] = useState(null);
     const [useCustomPlayer, setUseCustomPlayer] = useState(true);
@@ -338,7 +338,7 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
             ref={playerRef}
             onClick={handleContainerClick}
             onDoubleClick={!isMobile ? onToggleMaximize : undefined}
-            className="relative w-full h-full bg-black border border-white/5 rounded-xl overflow-hidden flex flex-col group shadow-2xl ring-1 ring-white/5 hover:ring-kick-green/30 transition-all duration-300 pointer-events-auto"
+            className={`relative w-full h-full bg-black border border-white/5 ${full ? '' : 'rounded-xl'} overflow-hidden flex flex-col group shadow-2xl ring-1 ring-white/5 hover:ring-kick-green/30 transition-all duration-300 pointer-events-auto`}
         >
             {isMobile && isMaximized && showMobileControls && (
                 <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
@@ -534,31 +534,35 @@ const KickPlayer = ({ channel, onRemove, shouldMuteAll, isMaximized, onToggleMax
                             </div>
                         </div>
 
-                        <div className="relative group/tooltip">
-                            <button
-                                onClick={(e) => { e.stopPropagation(); onToggleMaximize(); }}
-                                className="p-1 md:p-1.5 rounded-md hover:bg-white/10 text-white transition-colors cursor-pointer"
-                            >
-                                {isMaximized ? <Minimize2 size={14} className="md:w-4 md:h-4" /> : <Maximize size={14} className="md:w-4 md:h-4" />}
-                            </button>
-                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-bold px-2 py-1 rounded shadow-md opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-[60]">
-                                {isMaximized ? "Achicar" : "Maximizar"}
-                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-[4px] border-transparent border-t-white"></div>
+                        {!solo && (
+                            <div className="relative group/tooltip">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); onToggleMaximize(); }}
+                                    className="p-1 md:p-1.5 rounded-md hover:bg-white/10 text-white transition-colors cursor-pointer"
+                                >
+                                    {isMaximized ? <Minimize2 size={14} className="md:w-4 md:h-4" /> : <Maximize size={14} className="md:w-4 md:h-4" />}
+                                </button>
+                                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-bold px-2 py-1 rounded shadow-md opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-[60]">
+                                    {isMaximized ? "Achicar" : "Maximizar"}
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-[4px] border-transparent border-t-white"></div>
+                                </div>
                             </div>
-                        </div>
+                        )}
 
-                        <div className="relative group/tooltip ml-1">
-                            <button
-                                onClick={(e) => { e.stopPropagation(); onRemove(channel); }}
-                                className="p-1 md:p-1.5 rounded-md hover:bg-red-500/20 text-red-400 hover:text-white transition-colors cursor-pointer"
-                            >
-                                <X size={14} className="md:w-4 md:h-4" />
-                            </button>
-                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-bold px-2 py-1 rounded shadow-md opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-[60]">
-                                Remover
-                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-[4px] border-transparent border-t-white"></div>
+                        {!solo && (
+                            <div className="relative group/tooltip ml-1">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); onRemove(channel); }}
+                                    className="p-1 md:p-1.5 rounded-md hover:bg-red-500/20 text-red-400 hover:text-white transition-colors cursor-pointer"
+                                >
+                                    <X size={14} className="md:w-4 md:h-4" />
+                                </button>
+                                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-bold px-2 py-1 rounded shadow-md opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-[60]">
+                                    Remover
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-[4px] border-transparent border-t-white"></div>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
             </div>
