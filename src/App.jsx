@@ -7,6 +7,7 @@ import LandingPage from './components/LandingPage';
 import AdminPage from './components/AdminPage';
 import AdminTopGlobales from './components/AdminTopGlobales';
 import SoloVideoPage from './components/SoloVideoPage';
+import VivosPlayerPage from './components/VivosPlayerPage';
 import { initiateLogin, handleCallback, fetchCurrentUser, refreshAccessToken } from './utils/kickAuth';
 
 function App() {
@@ -114,8 +115,9 @@ function App() {
 
     const specialRoutes = ['/viewadmin', '/admin-topglobales'];
     const isSoloVideo = window.location.pathname.startsWith('/solovideo/');
+    const isVivos = window.location.pathname.startsWith('/vivos/');
 
-    if (!specialRoutes.includes(window.location.pathname) && !isSoloVideo) {
+    if (!specialRoutes.includes(window.location.pathname) && !isSoloVideo && !isVivos) {
       initializeChannels();
     } else {
       setIsInitializing(false);
@@ -382,6 +384,10 @@ function App() {
 
   if (window.location.pathname === '/admin-topglobales') {
     return <AdminTopGlobales />;
+  }
+
+  if (window.location.pathname.startsWith('/vivos/')) {
+    return <VivosPlayerPage />;
   }
 
   if (!isStreamActive) {

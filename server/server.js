@@ -191,6 +191,70 @@ app.get('/api/admin/data', authenticateAdmin, async (req, res) => {
     }
 });
 
+// Endpoint proxy for m3u8
+app.get('/api/proxy', async (req, res) => {
+    const targetUrl = req.query.url;
+    if (!targetUrl) return res.status(400).send("No url provided");
+
+    try {
+        const response = await fetch(targetUrl, {
+            headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+                "Referer": new URL(targetUrl).origin
+            }
+        });
+
+        if (!response.ok) {
+            return res.status(response.status).send(`Failed to fetch ${targetUrl}: ${response.statusText}`);
+        }
+
+        const contentType = response.headers.get('content-type');
+        res.set('Access-Control-Allow-Origin', '*');
+        if (contentType) res.set('Content-Type', contentType);
+
+        if (targetUrl.includes('.m3u8') || (contentType && contentType.includes('mpegurl'))) {
+            let body = await response.text();
+
+            const baseUrl = targetUrl.substring(0, targetUrl.lastIndexOf('/') + 1);
+            const lines = body.split('\\n');
+            const rewrittenLines = lines.map(line => {
+                const trimmed = line.trim();
+                // Not empty, not comment, not absolute
+                if (trimmed && !trimmed.startsWith('#') && !trimmed.startsWith('http')) {
+                    const absoluteUrl = new URL(trimmed, baseUrl).href;
+                    return `/api/proxy?url=${encodeURIComponent(absoluteUrl)}`;
+                } else if (trimmed && trimmed.startsWith('http')) {
+                    // Absolute URL segment
+                    return `/api/proxy?url=${encodeURIComponent(trimmed)}`;
+                }
+
+                // If it's a tag that contains URI=... we rewrite the inner URI to the proxy
+                if (trimmed.startsWith('#EXT')) {
+                    const uriMatch = trimmed.match(/URI="([^"]+)"/);
+                    if (uriMatch && uriMatch[1]) {
+                        let uri = uriMatch[1];
+                        if (!uri.startsWith('http')) {
+                            uri = new URL(uri, baseUrl).href;
+                        }
+                        const proxiedUri = `/api/proxy?url=${encodeURIComponent(uri)}`;
+                        line = line.replace(`URI="${uriMatch[1]}"`, `URI="${proxiedUri}"`);
+                    }
+                }
+
+                return line;
+            });
+            return res.send(rewrittenLines.join('\\n'));
+        } else {
+            const arrayBuffer = await response.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            res.send(buffer);
+        }
+    } catch (e) {
+        console.error("Proxy error:", e.message);
+        res.status(500).send("Proxy error: " + e.message);
+    }
+});
+
 const PORT = 3001;
 server.listen(PORT, () => {
     console.log(`Socket.io Server running on port ${PORT}`);
