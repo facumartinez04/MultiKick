@@ -137,16 +137,33 @@ const KickChat = ({ channel, active, userData, onPermissionsUpdate }) => {
     const containerRef = useRef(null);
     const [autoScroll, setAutoScroll] = useState(true);
 
+    const autoScrollRef = useRef(autoScroll);
+    useEffect(() => {
+        autoScrollRef.current = autoScroll;
+    }, [autoScroll]);
+
+    const handleImageLoad = () => {
+        if (autoScrollRef.current && containerRef.current) {
+            containerRef.current.scrollTop = containerRef.current.scrollHeight;
+        }
+    };
+
     useEffect(() => {
         if (autoScroll && containerRef.current) {
             containerRef.current.scrollTop = containerRef.current.scrollHeight;
+            const timer = setTimeout(() => {
+                if (containerRef.current) {
+                    containerRef.current.scrollTop = containerRef.current.scrollHeight;
+                }
+            }, 50);
+            return () => clearTimeout(timer);
         }
     }, [messages, autoScroll]);
 
     const handleScroll = () => {
         if (!containerRef.current) return;
         const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
-        const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
+        const isAtBottom = scrollHeight - scrollTop - clientHeight < 150;
         setAutoScroll(isAtBottom);
     };
 
@@ -171,6 +188,7 @@ const KickChat = ({ channel, active, userData, onPermissionsUpdate }) => {
                         alt={word}
                         title={word}
                         className="inline-block h-8 align-middle mx-1"
+                        onLoad={handleImageLoad}
                     />
                 );
             }
@@ -219,6 +237,7 @@ const KickChat = ({ channel, active, userData, onPermissionsUpdate }) => {
                     alt={emoteName}
                     title={emoteName}
                     className="inline-block h-6 align-middle mx-0.5"
+                    onLoad={handleImageLoad}
                 />
             );
 

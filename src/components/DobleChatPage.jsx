@@ -248,17 +248,34 @@ const DobleChatPage = () => {
         };
     }, [chatroomIds, channels]);
 
+    const autoScrollRef = useRef(autoScroll);
+    useEffect(() => {
+        autoScrollRef.current = autoScroll;
+    }, [autoScroll]);
+
+    const handleImageLoad = () => {
+        if (autoScrollRef.current && containerRef.current) {
+            containerRef.current.scrollTop = containerRef.current.scrollHeight;
+        }
+    };
+
     // Auto Scroll effect
     useEffect(() => {
         if (autoScroll && containerRef.current) {
             containerRef.current.scrollTop = containerRef.current.scrollHeight;
+            const timer = setTimeout(() => {
+                if (containerRef.current) {
+                    containerRef.current.scrollTop = containerRef.current.scrollHeight;
+                }
+            }, 50);
+            return () => clearTimeout(timer);
         }
     }, [messages, autoScroll]);
 
     const handleScroll = () => {
         if (!containerRef.current) return;
         const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
-        const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
+        const isAtBottom = scrollHeight - scrollTop - clientHeight < 150;
         setAutoScroll(isAtBottom);
     };
 
@@ -369,6 +386,7 @@ const DobleChatPage = () => {
                         alt={word}
                         title={word}
                         className="inline-block h-8 align-middle mx-1"
+                        onLoad={handleImageLoad}
                     />
                 );
             }
@@ -417,6 +435,7 @@ const DobleChatPage = () => {
                     alt={emoteName}
                     title={emoteName}
                     className="inline-block h-6 align-middle mx-0.5"
+                    onLoad={handleImageLoad}
                 />
             );
 
@@ -633,7 +652,7 @@ const DobleChatPage = () => {
                                             {/* Channel Capsule */}
                                             <span className="inline-flex items-center gap-1.5 bg-white/5 border border-white/10 rounded-full pl-1 pr-2 py-0.5 text-[10px] font-black text-gray-300 select-none mr-2.5 relative -top-[1px] align-middle">
                                                 {channelAvatars[msg.channel] ? (
-                                                    <img src={channelAvatars[msg.channel]} className="w-3.5 h-3.5 rounded-full object-cover" />
+                                                    <img src={channelAvatars[msg.channel]} className="w-3.5 h-3.5 rounded-full object-cover" onLoad={handleImageLoad} />
                                                 ) : (
                                                     <div className="w-3.5 h-3.5 rounded-full bg-kick-green text-black text-[8px] flex items-center justify-center uppercase font-black">{msg.channel.substring(0, 2)}</div>
                                                 )}
