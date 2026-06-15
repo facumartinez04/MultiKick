@@ -8,6 +8,7 @@ import AdminPage from './components/AdminPage';
 import AdminTopGlobales from './components/AdminTopGlobales';
 import SoloVideoPage from './components/SoloVideoPage';
 import VivosPlayerPage from './components/VivosPlayerPage';
+import MultiChatPage from './components/MultiChatPage';
 import { initiateLogin, handleCallback, fetchCurrentUser, refreshAccessToken } from './utils/kickAuth';
 
 function App() {
@@ -116,8 +117,9 @@ function App() {
     const specialRoutes = ['/viewadmin', '/admin-topglobales'];
     const isSoloVideo = window.location.pathname.startsWith('/solovideo/');
     const isVivos = window.location.pathname.startsWith('/vivos/');
+    const isChat = window.location.pathname === '/chat' || window.location.pathname.startsWith('/chat/');
 
-    if (!specialRoutes.includes(window.location.pathname) && !isSoloVideo && !isVivos) {
+    if (!specialRoutes.includes(window.location.pathname) && !isSoloVideo && !isVivos && !isChat) {
       initializeChannels();
     } else {
       setIsInitializing(false);
@@ -174,6 +176,11 @@ function App() {
       try {
         const parsed = JSON.parse(savedState);
         if (parsed && parsed.channels && parsed.channels.length > 0) {
+          if (parsed.isChatPage) {
+            localStorage.removeItem('kick_pre_login_state');
+            window.location.href = `/chat/${parsed.channels.join(',')}`;
+            return;
+          }
           setChannels(parsed.channels);
           if (parsed.activeChat) setActiveChat(parsed.activeChat);
           if (parsed.isStreamActive) setIsStreamActive(parsed.isStreamActive);
@@ -388,6 +395,10 @@ function App() {
 
   if (window.location.pathname.startsWith('/vivos/')) {
     return <VivosPlayerPage />;
+  }
+
+  if (window.location.pathname === '/chat' || window.location.pathname.startsWith('/chat/')) {
+    return <MultiChatPage />;
   }
 
   if (!isStreamActive) {
