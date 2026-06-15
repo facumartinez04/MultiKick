@@ -9,6 +9,7 @@ import AdminTopGlobales from './components/AdminTopGlobales';
 import SoloVideoPage from './components/SoloVideoPage';
 import VivosPlayerPage from './components/VivosPlayerPage';
 import MultiChatPage from './components/MultiChatPage';
+import DobleChatPage from './components/DobleChatPage';
 import { initiateLogin, handleCallback, fetchCurrentUser, refreshAccessToken } from './utils/kickAuth';
 
 function App() {
@@ -118,8 +119,9 @@ function App() {
     const isSoloVideo = window.location.pathname.startsWith('/solovideo/');
     const isVivos = window.location.pathname.startsWith('/vivos/');
     const isChat = window.location.pathname === '/chat' || window.location.pathname.startsWith('/chat/');
+    const isDobleChat = window.location.pathname === '/doblechat' || window.location.pathname.startsWith('/doblechat/');
 
-    if (!specialRoutes.includes(window.location.pathname) && !isSoloVideo && !isVivos && !isChat) {
+    if (!specialRoutes.includes(window.location.pathname) && !isSoloVideo && !isVivos && !isChat && !isDobleChat) {
       initializeChannels();
     } else {
       setIsInitializing(false);
@@ -179,6 +181,11 @@ function App() {
           if (parsed.isChatPage) {
             localStorage.removeItem('kick_pre_login_state');
             window.location.href = `/chat/${parsed.channels.join(',')}`;
+            return;
+          }
+          if (parsed.isDobleChatPage) {
+            localStorage.removeItem('kick_pre_login_state');
+            window.location.href = `/doblechat/${parsed.channels.join(',')}`;
             return;
           }
           setChannels(parsed.channels);
@@ -399,6 +406,10 @@ function App() {
 
   if (window.location.pathname === '/chat' || window.location.pathname.startsWith('/chat/')) {
     return <MultiChatPage />;
+  }
+
+  if (window.location.pathname === '/doblechat' || window.location.pathname.startsWith('/doblechat/')) {
+    return <DobleChatPage />;
   }
 
   if (!isStreamActive) {
